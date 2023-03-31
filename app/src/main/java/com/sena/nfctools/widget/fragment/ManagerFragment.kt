@@ -15,6 +15,8 @@ import com.sena.nfctools.databinding.FragmentManagerBinding
 
 class ManagerFragment : BaseFragment() {
 
+    private var isFirst = true
+
     private lateinit var binding: FragmentManagerBinding
     private lateinit var mAdapter: CardAdapter
 
@@ -28,6 +30,14 @@ class ManagerFragment : BaseFragment() {
         initView()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (isFirst) {
+            isFirst = false
+            vm.init(mContext)
+        }
     }
 
     private fun initView() {

@@ -1,12 +1,15 @@
-package com.sena.nfctools
+package com.sena.nfctools.widget
 
 import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.nfc.NfcAdapter
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.fragment.app.FragmentManager
+import com.sena.nfctools.R
 import com.sena.nfctools.databinding.ActivityMainBinding
 import com.sena.nfctools.widget.fragment.*
 
@@ -19,24 +22,42 @@ import com.sena.nfctools.widget.fragment.*
  * Android NFC详解 https://blog.csdn.net/u013164293/article/details/124474247
  */
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseNfcActivity() {
+
+    companion object {
+        const val NAME_MANAGER = "name_manager"
+        const val NAME_READ = "name_read"
+        const val NAME_WRITE = "name_write"
+        const val NAME_FORMAT = "name_format"
+        const val ACTION_DISPLAY_FRAGMENT = "action_display_fragment"
+        const val KEY_FRAGMENT_NAME = "key_fragment_name"
+    }
 
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var fm: FragmentManager
 
-    private val mNfcAdapter: NfcAdapter by lazy {
-        NfcAdapter.getDefaultAdapter(this)
-    }
+    private val fragmentReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (ACTION_DISPLAY_FRAGMENT == intent?.action) {
+                val name = intent.getStringExtra(KEY_FRAGMENT_NAME)
+                if (name == null) {
 
+                }
+                val fragment = fragmentMap[] ?: return
+                fm.beginTransaction().replace(R.id.content, fragment).commit()
+            }
+        }
+
+    }
     private var currentFragment: BaseFragment? = null
 
-    private val fragmentMap: Map<String, BaseFragment> by lazy {
+    private val fragmentMap: Map<Int, BaseFragment> by lazy {
         mapOf(
-            "manager" to ManagerFragment(),
-            "read" to ReadFragment(),
-            "write" to WriteFragment(),
-            "format" to FormatFragment()
+            R.id.main_manager to ManagerFragment(),
+            R.id.main_read to ReadFragment(),
+            R.id.main_write to WriteFragment(),
+            R.id.main_format to FormatFragment()
         )
     }
 
@@ -59,13 +80,7 @@ class MainActivity : AppCompatActivity() {
             binding.drawerLayout.openDrawer(binding.navView)
         }
         binding.navView.setNavigationItemSelectedListener {
-            currentFragment = when (it.itemId) {
-                R.id.main_manager -> fragmentMap["manager"]
-                R.id.main_read -> fragmentMap["read"]
-                R.id.main_write -> fragmentMap["write"]
-                R.id.main_format -> fragmentMap["format"]
-                else -> null
-            }
+            currentFragment = fragmentMap[it.itemId]
             currentFragment?.let { f ->
                 fm.beginTransaction().replace(binding.content.id, f).commit()
             }
@@ -73,26 +88,14 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        currentFragment = fragmentMap["manager"]
-        fm.beginTransaction().replace(binding.content.id, currentFragment!!)
+
+        binding.navView.setCheckedItem(R.id.main_manager)
+        currentFragment = fragmentMap[R.id.main_manager]
+        fm.beginTransaction().replace(binding.content.id, currentFragment!!).commit()
 
     }
 
-    override fun onResume() {
-        super.onResume()
 
-        // Q: intent.action == null
-        // A: https://blog.csdn.net/queal/article/details/126379781
-        // FLAG_IMMUTABLE 表示intent不能除发送端以外的其他应用修改
-        val pendingIntent = PendingIntent.getActivity(this, 0,
-            Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE)
-        val filters = arrayOf(
-            IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED),
-            IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED),
-            IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED)
-        )
-        mNfcAdapter.enableForegroundDispatch(this, pendingIntent, filters, null)
-    }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
@@ -100,14 +103,4 @@ class MainActivity : AppCompatActivity() {
         currentFragment?.handleIntent(intent)
     }
 
-    override fun onPause() {
-        super.onPause()
-        mNfcAdapter.disableForegroundDispatch(this)
-
-    }
-
-
-    override fun onDestroy() {
-        super.onDestroy()
-    }
 }

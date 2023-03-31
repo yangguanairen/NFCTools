@@ -11,13 +11,18 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
+import com.lxj.xpopup.XPopup
+import com.lxj.xpopup.core.BasePopupView
+import com.lxj.xpopup.interfaces.OnConfirmListener
 import com.sena.nfctools.CardViewModel
+import com.sena.nfctools.bean.BaseCard
 import com.sena.nfctools.databinding.FragmentReadBinding
 import com.sena.nfctools.utils.ByteUtils
 import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
 import com.sena.nfctools.utils.M1CardUtils
 import com.sena.nfctools.utils.NfcUtils
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,15 +34,20 @@ class ReadFragment : BaseFragment() {
 
     private lateinit var vm: CardViewModel
 
+    private lateinit var readingPopup: BasePopupView
+    private lateinit var confirmPopup: BasePopupView
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = FragmentReadBinding.inflate(layoutInflater, container, false)
 
         vm = ViewModelProvider(mOwner)[CardViewModel::class.java]
-
+        initView()
         return binding.root
     }
 
     private fun initView() {
+        readingPopup = XPopup.Builder(mContext)
+            .asLoading("正在复制中")
 
     }
 
@@ -51,23 +61,43 @@ class ReadFragment : BaseFragment() {
         }
 
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                context?.let { mContext ->
+            readingPopup.show()
+            val result: BaseCard? = withContext(Dispatchers.IO) {
+                context?.let {
                     val m1Card = M1CardUtils.readM1Card(tag)
                     if (m1Card == null) {
                         println("解析失败")
                         return@let null
                     }
-                    vm.put(m1Card)
-                    println(Gson().toJson(vm.getCardList()))
-                    DataStoreUtils.put(mContext.dataStore, DataStoreUtils.key_M1, Gson().toJson(vm.getCardList()))
-                    ByteUtils.byteArrayToHexString(m1Card.id)
+                    m1Card
+//                    vm.put(m1Card)
+//                    println(Gson().toJson(vm.getCardList()))
+//                    DataStoreUtils.put(mContext.dataStore, DataStoreUtils.key_M1, Gson().toJson(vm.getCardList()))
+//                    ByteUtils.byteArrayToHexString(m1Card.id)
                 }
             }
-            Toast.makeText(mContext, "录入完成 $result", Toast.LENGTH_SHORT).show()
+            readingPopup.dismiss()
+            if (result == null) {
+                Toast.makeText(mContext, "读取失败!!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(mContext, "读取成功!!", Toast.LENGTH_SHORT).show()
+
+                confirmPopup = XPopup.Builder(mContext)
+                    .asConfirm("读取到卡片$result, 是否要添加？", "") {
+                        addNewCard(result)
+                        confirmPopup.dismiss()
+                    }.show()
+            }
         }
 
     }
 
+    private fun addNewCard(card: BaseCard) {
+        vm.put(card)
+        println(Gson().toJson(vm.getCardList()))
+        lifecycleScope.launch(Dispatchers.IO) {
+            DataStoreUtils.put(mContext.dataStore, DataStoreUtils.key_M1, Gson().toJson(vm.getCardList()))
+        }
+    }
 
 }

@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.sena.nfctools.bean.BaseCard
 import com.sena.nfctools.bean.M1Card
+import com.sena.nfctools.utils.ByteUtils
 import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
 import org.json.JSONObject
@@ -23,7 +24,7 @@ import java.security.interfaces.DSAKey
 class CardViewModel : ViewModel() {
 
 
-    private val cardList: MutableMap<ByteArray, BaseCard> = mutableMapOf()
+    private val cardList: MutableMap<String, BaseCard> = mutableMapOf()
 
     val isChange: MutableLiveData<Boolean> = MutableLiveData(false)
 
@@ -32,7 +33,7 @@ class CardViewModel : ViewModel() {
         try {
             val m1List: List<M1Card> = Gson().fromJson(m1Gson, object : TypeToken<List<M1Card>>() {}.type)
             m1List.forEach {
-                cardList[it.id] = it
+                cardList[ByteUtils.byteArrayToHexString(it.id)] = it
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -41,14 +42,14 @@ class CardViewModel : ViewModel() {
     }
 
     fun put(card: BaseCard) {
-        val id = card.cardId
+        val id = ByteUtils.byteArrayToHexString(card.cardId)
 //        val isConflict = cardList.none { it.key.contentEquals(id) }
         cardList[id] = card
         isChange.postValue(true)
     }
 
     fun remove(card: BaseCard) {
-        val id = card.cardId
+        val id = ByteUtils.byteArrayToHexString(card.cardId)
         cardList.remove(id)
         isChange.postValue(true)
     }

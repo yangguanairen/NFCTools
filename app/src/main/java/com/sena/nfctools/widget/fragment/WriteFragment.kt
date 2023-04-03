@@ -1,11 +1,17 @@
 package com.sena.nfctools.widget.fragment
 
 import android.content.Intent
+import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.lifecycleScope
 import com.sena.nfctools.databinding.FragmentWriteBinding
+import com.sena.nfctools.utils.M1CardUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class WriteFragment : BaseFragment() {
 
@@ -17,8 +23,20 @@ class WriteFragment : BaseFragment() {
         return binding.root
     }
 
+    private fun initView() {
+
+    }
+
     override fun handleIntent(intent: Intent) {
         super.handleIntent(intent)
+        val tag = intent.getParcelableExtra<Tag>(NfcAdapter.EXTRA_TAG)
+        if (tag == null) {
+            println("tag is null")
+            return
+        }
+        lifecycleScope.launch(Dispatchers.IO) {
+            M1CardUtils.format(tag)
+        }
     }
 
 }

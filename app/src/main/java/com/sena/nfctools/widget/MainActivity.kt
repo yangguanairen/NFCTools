@@ -1,14 +1,12 @@
 package com.sena.nfctools.widget
 
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.nfc.NfcAdapter
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.fragment.app.FragmentManager
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.sena.nfctools.R
 import com.sena.nfctools.databinding.ActivityMainBinding
 import com.sena.nfctools.widget.fragment.*
@@ -36,15 +34,16 @@ class MainActivity : BaseNfcActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var fm: FragmentManager
+    private lateinit var lbm: LocalBroadcastManager
 
     private val fragmentReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (ACTION_DISPLAY_FRAGMENT == intent?.action) {
                 val name = intent.getStringExtra(KEY_FRAGMENT_NAME)
                 if (name == null) {
-
+                    return
                 }
-                val fragment = fragmentMap[] ?: return
+                val fragment = fragmentMap[name] ?: return
                 fm.beginTransaction().replace(R.id.content, fragment).commit()
             }
         }
@@ -52,12 +51,12 @@ class MainActivity : BaseNfcActivity() {
     }
     private var currentFragment: BaseFragment? = null
 
-    private val fragmentMap: Map<Int, BaseFragment> by lazy {
+    private val fragmentMap: Map<String, BaseFragment> by lazy {
         mapOf(
-            R.id.main_manager to ManagerFragment(),
-            R.id.main_read to ReadFragment(),
-            R.id.main_write to WriteFragment(),
-            R.id.main_format to FormatFragment()
+            NAME_MANAGER to ManagerFragment(),
+            NAME_READ to ReadFragment(),
+            NAME_WRITE to WriteFragment(),
+            NAME_FORMAT to FormatFragment()
         )
     }
 
@@ -67,6 +66,12 @@ class MainActivity : BaseNfcActivity() {
         setContentView(binding.root)
         fm = supportFragmentManager
         initView()
+        initOther()
+    }
+
+    private fun initOther() {
+        lbm = LocalBroadcastManager.getInstance(this)
+        lbm.registerReceiver(fragmentReceiver, IntentFilter(ACTION_DISPLAY_FRAGMENT))
     }
 
     private fun initView() {
@@ -80,7 +85,13 @@ class MainActivity : BaseNfcActivity() {
             binding.drawerLayout.openDrawer(binding.navView)
         }
         binding.navView.setNavigationItemSelectedListener {
-            currentFragment = fragmentMap[it.itemId]
+            currentFragment = fragmentMap[when(it.itemId) {
+                R.id.main_manager -> NAME_MANAGER
+                R.id.main_read -> NAME_READ
+                R.id.main_write -> NAME_WRITE
+                R.id.main_format -> NAME_FORMAT
+                else -> ""
+            }]
             currentFragment?.let { f ->
                 fm.beginTransaction().replace(binding.content.id, f).commit()
             }
@@ -90,7 +101,7 @@ class MainActivity : BaseNfcActivity() {
 
 
         binding.navView.setCheckedItem(R.id.main_manager)
-        currentFragment = fragmentMap[R.id.main_manager]
+        currentFragment = fragmentMap[NAME_MANAGER]
         fm.beginTransaction().replace(binding.content.id, currentFragment!!).commit()
 
     }
@@ -101,6 +112,11 @@ class MainActivity : BaseNfcActivity() {
         super.onNewIntent(intent)
         if (intent == null) return
         currentFragment?.handleIntent(intent)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        lbm.unregisterReceiver(fragmentReceiver)
     }
 
 }

@@ -1,5 +1,9 @@
 package com.sena.nfctools.utils
 
+import android.content.Context
+import android.net.Uri
+import android.net.wifi.WifiConfiguration
+import android.net.wifi.WifiManager
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.NfcAdapter
@@ -8,9 +12,11 @@ import android.nfc.tech.MifareClassic
 import android.nfc.tech.MifareUltralight
 import android.nfc.tech.Ndef
 import android.nfc.tech.NfcA
+import com.sena.nfctools.BuildConfig
 import com.sena.nfctools.bean.M1Block
 import com.sena.nfctools.bean.M1Card
 import com.sena.nfctools.bean.M1Sector
+import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 
@@ -114,6 +120,103 @@ object M1CardUtils {
 
     }
 
+    fun testWriteWifi(tag: Tag, context: Context) {
+
+        // http://androidxref.com/5.1.0_r1/xref/packages/apps/Settings/src/com/android/settings/wifi/WriteWifiConfigToNfcDialog.java
+        // https://github.com/bparmentier/WiFiKeyShare/blob/ec251136264d011528d859399d38eb3cf5ebe0a8/app/src/main/java/be/brunoparmentier/wifikeyshare/utils/NfcUtils.java#L174
+
+        val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+//        val list = wifiManager.configuredNetworks
+//        list.forEach {
+//            it.SSID
+//        }
+
+        val ssid = "Aitmed-ECOS"
+        val passwd = "aitmed123"
+        val authType: Short = 0x0020
+
+        val credential_field_id: Short = 0x100E
+        val ssid_field_id: Short = 0x1405
+        val auth_type_field_id: Short = 0x1003
+        val network_index_field_Id: Short = 0x1026
+
+        val ssidSize = ssid.toByteArray().size.toShort()
+        val passwdSize = passwd.toByteArray().size.toShort()
+
+
+        val bufferSize = 18 + ssidSize + passwdSize
+        val buffer = ByteBuffer.allocate(bufferSize)
+        buffer.putShort(credential_field_id)
+        buffer.putShort((bufferSize - 4).toShort())
+
+        buffer.putShort(ssid_field_id)
+        buffer.putShort(ssidSize)
+        buffer.put(ssid.toByteArray())
+
+        buffer.putShort(auth_type_field_id)
+        buffer.putShort(2.toShort())
+        buffer.putShort(authType)
+
+        buffer.putShort(network_index_field_Id)
+        buffer.putShort(passwdSize)
+        buffer.put(passwd.toByteArray())
+        val array = buffer.array()
+        println(ByteUtils.byteArrayToHexString(array))
+
+        val token_mime_type = "application/vnd.wfa.wsc"
+
+//        val mimeRecord = NdefRecord(
+//            NdefRecord.TNF_MIME_MEDIA,
+//            token_mime_type.toByteArray(Charset.forName("US-ASCII")),
+//            ByteArray(0),
+//            buffer.array()
+//        )
+        val mimeRecord = NdefRecord.createMime(
+            token_mime_type,
+            array
+        )
+        val aarRecord: NdefRecord = NdefRecord.createApplicationRecord(BuildConfig.APPLICATION_ID)
+        val ndefMessage = NdefMessage(mimeRecord)
+
+
+        val data = ndefMessage.toByteArray()
+        var readIndex = 0
+
+        val mifareClassic = MifareClassic.get(tag)
+        mifareClassic.connect()
+        val sCount = mifareClassic.sectorCount
+
+        for (i in 1 until sCount) {
+            if (!m1Auth(mifareClassic, i, MifareClassic.KEY_DEFAULT)) continue
+            val bCount = mifareClassic.getBlockCountInSector(i)
+            var bIndex = mifareClassic.sectorToBlock(i)
+
+            for (j in 0 until bCount - 1) {
+                val writeData = ByteArray(16)
+                for (z in 0 until 16) {
+                    writeData[z] = if (readIndex >= data.size) 0 else data[readIndex]
+                    readIndex++
+                }
+                println("区块: $bIndex, 写入数据: ${ByteUtils.byteArrayToHexString(writeData)}")
+                mifareClassic.writeBlock(bIndex, writeData)
+
+                bIndex++
+            }
+        }
+        mifareClassic.close()
+
+//        val ndef = Ndef.get(tag)
+//        ndef.connect()
+//        ndef.writeNdefMessage(ndefMessage)
+
+
+
+//        val wifiConfig = WifiConfiguration()
+//        wifiConfig.SSID =
+
+        // ssid, passwd, encryptMethod, Authentication
+    }
+
 
     fun test(tag: Tag) {
 
@@ -129,6 +232,12 @@ object M1CardUtils {
             }
         }
 
+
+        val appRecord = NdefRecord.createApplicationRecord("")
+        val uriRecord = NdefRecord.createUri(Uri.parse(""))
+        val textRecord = NdefRecord.createTextRecord("", "")
+        val mimeRecord = NdefRecord.createMime("", byteArrayOf())
+        val externRecord = NdefRecord.createExternal("", "", byteArrayOf())
 
 //        val mifareClassic = MifareClassic.get(tag)
 //        mifareClassic.connect()
@@ -210,7 +319,7 @@ object M1CardUtils {
         }
     }
 
-    private fun m1Auth(m1: MifareClassic, pos: Int, key: ByteArray): Boolean {
+    fun m1Auth(m1: MifareClassic, pos: Int, key: ByteArray): Boolean {
         return if (m1.authenticateSectorWithKeyA(pos, key)) {
             println("使用密钥A对$pos 扇区校验成功")
             true
@@ -237,7 +346,7 @@ object M1CardUtils {
                 blockList.add(M1Block(bIndex, data))
                 val hexStr = ByteUtils.byteArrayToHexString(data, separator = " ")
                 println("$i 扇区 $j 块: $hexStr")
-                println("对应文本: ${String(data, Charset.forName("UTF-8"))}")
+                println("对应文本: ${String(data, Charset.forName("US-ASCII"))}")
                 bIndex++
             }
 

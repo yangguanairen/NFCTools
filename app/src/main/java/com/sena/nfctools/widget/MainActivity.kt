@@ -56,7 +56,7 @@ class MainActivity : BaseNfcActivity() {
             NAME_MANAGER to ManagerFragment(),
             NAME_READ to ReadFragment(),
             NAME_WRITE to WriteFragment(),
-            NAME_FORMAT to FormatFragment()
+            NAME_FORMAT to OtherFragment()
         )
     }
 

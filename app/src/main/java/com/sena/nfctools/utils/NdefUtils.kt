@@ -5,9 +5,12 @@ import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.os.Build
+import com.google.gson.Gson
 import com.sena.nfctools.NfcApplication
 import com.sena.nfctools.bean.CardData
+import com.sena.nfctools.bean.OptType
 import com.sena.nfctools.bean.RecordData
+import com.sena.nfctools.bean.WriteData
 
 
 /**
@@ -19,45 +22,38 @@ import com.sena.nfctools.bean.RecordData
 object NdefUtils {
 
     fun parse(tag: Tag): CardData? {
-        val ndef = Ndef.get(tag)
         val cardData = CardData()
-        val result = runCatching {
-            ndef.connect()
-            cardData.apply {
-                tagId = tag.id
-                techList = tag.techList.toList()
-                ndefType = ndef.type
-                maxSize = ndef.maxSize
-                canMakeReadOnly = ndef.canMakeReadOnly()
-                isWritable = ndef.isWritable
-                ndefRecords = getNdefRecord(ndef.ndefMessage.records)
-            }
-        }.onFailure {
-            it.printStackTrace()
+        val isSuccess = parseBasicInfo(tag, cardData)
+        println("测试: ${Gson().toJson(cardData)}")
+
+        when (getCardTypeByTechList(tag.techList)) {
+             CardType.M1 -> {
+                 cardData.mifareClassicData = M1CardUtils.readM1Card(tag)
+             }
+            else -> {}
         }
-        runCatching {
-            ndef.close()
-        }
-        cardData.mifareClassicData = M1CardUtils.readM1Card(tag)
-        return if (result.isSuccess) {
+
+        return if (isSuccess) {
             cardData
         } else {
             null
         }
     }
 
-    fun write(tag: Tag, opt: String, data: String): Boolean {
+    fun write(tag: Tag, writeDataList: List<WriteData>): Boolean {
+
+        val records = arrayListOf<NdefRecord>().apply {
+            writeDataList.forEach { writeData ->
+                writeData.build()?.let { this.add(it) }
+            }
+        }
+        if (records.isEmpty()) return false
+        val message = if (1 == records.size) NdefMessage(records[0]) else NdefMessage(records.toTypedArray())
+
         val ndef = Ndef.get(tag)
         val result = ndef.runCatching {
             ndef.connect()
-
-            val ndefRecord = when (opt) {
-                "Text" -> createTextRecord(data)
-                "App" -> createApplicationRecord(data)
-                else -> throw IllegalArgumentException("未知的opt: $opt" )
-            }
-            val ndefMessage = NdefMessage(ndefRecord)
-            ndef.writeNdefMessage(ndefMessage)
+            ndef.writeNdefMessage(message)
         }.onFailure {
             it.printStackTrace()
         }
@@ -67,20 +63,53 @@ object NdefUtils {
     }
 
     fun format(tag: Tag): Boolean {
-        val ndef = Ndef.get(tag)
-        val result = ndef.runCatching {
-            ndef.connect()
-            val type = "M1"
-            when (type) {
-                "M1" -> M1CardUtils.format(tag)
+        val result = runCatching {
+            when (getCardTypeByTechList(tag.techList)) {
+                CardType.M1 -> {
+                    M1CardUtils.format(tag)
+                }
+                else -> {
+
+                }
             }
+        }.onFailure {
+            it.printStackTrace()
         }
-        ndef.runCatching { close() }
 
         return result.isSuccess
     }
 
-    private fun getNdefRecord(records: Array<NdefRecord>): List<RecordData> {
+    fun getCardTypeByTechList(techList: Array<String>): CardType {
+        techList.forEach {
+            if ("mifareclassic" in it.lowercase()) {
+                return CardType.M1
+            }
+        }
+        return CardType.UNKNOWN
+    }
+
+    private fun parseBasicInfo(tag: Tag, cardData: CardData): Boolean {
+        val ndef = Ndef.get(tag)
+        val result = runCatching {
+            ndef.connect()
+            cardData.apply {
+                tagId = tag.id
+                techList = tag.techList.toList()
+                ndefType = ndef.type
+                maxSize = ndef.maxSize
+                canMakeReadOnly = ndef.canMakeReadOnly()
+                isWritable = ndef.isWritable
+                ndefRecords = parseNdefRecord(ndef.ndefMessage.records)
+            }
+        }.onFailure {
+            it.printStackTrace()
+        }
+        runCatching {
+            ndef.close()
+        }
+        return result.isSuccess
+    }
+    private fun parseNdefRecord(records: Array<NdefRecord>): List<RecordData> {
         val result = arrayListOf<RecordData>()
         records.forEach { record ->
             val tnf = record.tnf
@@ -95,19 +124,14 @@ object NdefUtils {
         return result
     }
 
-    private fun createApplicationRecord(appName: String): NdefRecord {
-        return NdefRecord.createApplicationRecord(appName)
-    }
-
-    private fun createTextRecord(text: String): NdefRecord {
-        val context = NfcApplication.getContext()
-        val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            context?.resources?.configuration?.locales?.get(0)
-        } else {
-            context?.resources?.configuration?.locale
-        } ?: "en"
-        return NdefRecord.createTextRecord("code", text)
-    }
 
 }
+
+
+enum class CardType {
+    M1,
+    UNKNOWN
+}
+
+
 

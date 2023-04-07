@@ -20,6 +20,8 @@ import java.nio.ByteBuffer
  * Android Wifi 详解
  * https://www.jianshu.com/p/ca13c4d40710
  *
+ *  http://androidxref.com/5.1.0_r1/xref/packages/apps/Settings/src/com/android/settings/wifi/WriteWifiConfigToNfcDialog.java
+ *
  * 下面那几个ID，不知道是怎么的出来的，
  * 没找的出处
  */
@@ -28,9 +30,15 @@ object Nfc_Wifi_Test {
 
 
     fun write(tag: Tag) {
+
+        val ssid = "Aitmed-ECOS"
+        val passwd = "aitmed123"
+        val authType = AUTH_TYPE_WPA2_PSK
+        val ecyType = ENC_TYPE_NONE
+
         val mimeRecord = NdefRecord.createMime(
             NFC_TOKEN_MIME_TYPE,
-            generatePayload()
+            generatePayload(ssid, passwd, authType, ecyType)
         )
         val ndefMessage = NdefMessage(mimeRecord)
         val data = ndefMessage.toByteArray()
@@ -82,7 +90,6 @@ object Nfc_Wifi_Test {
         return array
     }
 
-
     fun parse(tag: Tag) {
         val ndef = Ndef.get(tag)
         ndef.connect()
@@ -106,7 +113,7 @@ object Nfc_Wifi_Test {
         ndef.close()
     }
 
-    private fun parseCredential(payload: ByteBuffer, size: Short): WifiConfiguration? {
+     fun parseCredential(payload: ByteBuffer, size: Short): WifiConfiguration? {
         val startPos = payload.position()
         val config = WifiConfiguration()
         while (payload.position() < startPos + size) {
@@ -146,6 +153,81 @@ object Nfc_Wifi_Test {
         }
         return config
     }
+
+
+    fun specialTest(payload: ByteArray): String{
+        val buffer = ByteBuffer.wrap(payload)
+        var result: String = ""
+        while (buffer.hasRemaining()) {
+            val fieldId = buffer.short
+            val fieldSize = buffer.short
+            if (CREDENTIAL_FIELD_ID == fieldId) {
+                result += parseCredential(buffer, fieldSize)
+            } else {
+                buffer.position(buffer.position() + fieldSize)
+            }
+        }
+        return result
+    }
+
+    private fun specialTestLow(payload: ByteBuffer, size: Short): String {
+
+
+        return ""
+
+        var ssidStr = ""
+        var authTypeStr = ""
+        var encTypeStr = ""
+        var passwdStr = ""
+
+        val startPos = payload.position()
+        while (payload.position() < startPos + size) {
+            val fieldId = payload.short
+            val fieldSize = payload.short
+
+            if (payload.position() + fieldSize > startPos + size) {
+                return ""
+            }
+
+            when (fieldId) {
+                SSID_FIELD_ID -> {
+                    val ssid = ByteArray(fieldSize.toInt())
+                    payload.get(ssid)
+                    ssidStr = String(ssid)
+                    println("SSID: ${ByteUtils.byteArrayToHexString(ssid, separator = " ")}")
+                    println("SSID: ${String(ssid)}")
+                }
+                NETWORK_KEY_FIELD -> {
+                    val key = ByteArray(fieldSize.toInt())
+                    payload.get(key)
+                    passwdStr = String(key)
+                    println("KEY: ${ByteUtils.byteArrayToHexString(key, separator = " ")}")
+                    println("KEY: ${String(key)}")
+                }
+                AUTH_TYPE_FIELD_ID -> {
+                    val authType = payload.short
+                    println("AUTH_TYPE: $authType")
+                }
+                else -> {
+                    val unknown = ByteArray(fieldSize.toInt())
+                    payload.get(unknown)
+                    println("UNKNOWN_ID: $fieldId")
+                    println("UNKNOWN_CONTENT: ${ByteUtils.byteArrayToHexString(unknown, separator = " ")}")
+                }
+            }
+        }
+    }
+
+    fun getAuthTypeStr(type: Short): String {
+        return when (type) {
+            AUTH_TYPE_OPEN -> "打开"
+            AUTH_TYPE_WPA_EAP -> "WPA-Enterprise"
+            AUTH_TYPE_WPA_PSK -> "WPA-Personal"
+
+            else -> ""
+        }
+    }
+
 
     const val NFC_TOKEN_MIME_TYPE = "application/vnd.wfa.wsc"
     const val CREDENTIAL_FIELD_ID: Short = 0x100e

@@ -5,14 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.sena.nfctools.bean.BaseCard
-import com.sena.nfctools.bean.M1Card
+import com.sena.nfctools.bean.CardData
 import com.sena.nfctools.utils.ByteUtils
 import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
-import org.json.JSONObject
 import java.lang.Exception
-import java.security.interfaces.DSAKey
 
 
 /**
@@ -24,16 +21,16 @@ import java.security.interfaces.DSAKey
 class CardViewModel : ViewModel() {
 
 
-    private val cardList: MutableMap<String, BaseCard> = mutableMapOf()
+    private val cardList: MutableMap<String, CardData> = mutableMapOf()
 
     val isChange: MutableLiveData<Boolean> = MutableLiveData(false)
 
     fun init(context: Context) {
         val m1Gson = DataStoreUtils.get(context.dataStore, DataStoreUtils.key_M1, "")
         try {
-            val m1List: List<M1Card> = Gson().fromJson(m1Gson, object : TypeToken<List<M1Card>>() {}.type)
+            val m1List: List<CardData> = Gson().fromJson(m1Gson, object : TypeToken<List<CardData>>() {}.type)
             m1List.forEach {
-                cardList[ByteUtils.byteArrayToHexString(it.id)] = it
+                cardList[ByteUtils.byteArrayToHexString(it.tagId)] = it
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -41,20 +38,20 @@ class CardViewModel : ViewModel() {
         isChange.postValue(true)
     }
 
-    fun put(card: BaseCard) {
-        val id = ByteUtils.byteArrayToHexString(card.cardId)
+    fun put(card: CardData) {
+        val id = ByteUtils.byteArrayToHexString(card.tagId)
 //        val isConflict = cardList.none { it.key.contentEquals(id) }
         cardList[id] = card
         isChange.postValue(true)
     }
 
-    fun remove(card: BaseCard) {
-        val id = ByteUtils.byteArrayToHexString(card.cardId)
+    fun remove(card: CardData) {
+        val id = ByteUtils.byteArrayToHexString(card.tagId)
         cardList.remove(id)
         isChange.postValue(true)
     }
 
-    fun getCardList(): List<BaseCard> {
+    fun getCardList(): List<CardData> {
         return cardList.map {
             it.value
         }

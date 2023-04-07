@@ -13,16 +13,13 @@ import androidx.lifecycle.lifecycleScope
 import com.google.gson.Gson
 import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.core.BasePopupView
-import com.lxj.xpopup.interfaces.OnConfirmListener
 import com.sena.nfctools.CardViewModel
-import com.sena.nfctools.bean.BaseCard
+import com.sena.nfctools.bean.CardData
 import com.sena.nfctools.databinding.FragmentReadBinding
-import com.sena.nfctools.utils.ByteUtils
 import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
 import com.sena.nfctools.utils.M1CardUtils
-import com.sena.nfctools.utils.NfcUtils
-import kotlinx.coroutines.CoroutineScope
+import com.sena.nfctools.utils.NdefUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -62,18 +59,14 @@ class ReadFragment : BaseFragment() {
 
         lifecycleScope.launch {
             readingPopup.show()
-            val result: BaseCard? = withContext(Dispatchers.IO) {
+            val result: CardData? = withContext(Dispatchers.IO) {
                 context?.let {
-                    val m1Card = M1CardUtils.readM1Card(tag)
-                    if (m1Card == null) {
+                    val cardData = NdefUtils.parse(tag)
+                    if (cardData == null) {
                         println("解析失败")
                         return@let null
                     }
-                    m1Card
-//                    vm.put(m1Card)
-//                    println(Gson().toJson(vm.getCardList()))
-//                    DataStoreUtils.put(mContext.dataStore, DataStoreUtils.key_M1, Gson().toJson(vm.getCardList()))
-//                    ByteUtils.byteArrayToHexString(m1Card.id)
+                    cardData
                 }
             }
             readingPopup.dismiss()
@@ -92,7 +85,7 @@ class ReadFragment : BaseFragment() {
 
     }
 
-    private fun addNewCard(card: BaseCard) {
+    private fun addNewCard(card: CardData) {
         vm.put(card)
         println(Gson().toJson(vm.getCardList()))
         lifecycleScope.launch(Dispatchers.IO) {

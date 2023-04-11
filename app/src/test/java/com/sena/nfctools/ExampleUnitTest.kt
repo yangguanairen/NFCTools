@@ -12,6 +12,8 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+        val b1 = byteArrayOf(0, 1, 10)
+        val b = b1 + byteArrayOf(-1, 7, 11)
+        println(b.joinToString(separator = ", "))
     }
 }

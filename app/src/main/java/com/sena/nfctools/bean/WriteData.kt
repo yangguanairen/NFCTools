@@ -55,6 +55,8 @@ enum class OptType {
     WIFI,
     APPLICATION,
     FORMAT,
+    COPY,
+    SAL,
     UNKNOWN
 }
 

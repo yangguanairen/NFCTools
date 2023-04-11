@@ -49,6 +49,7 @@ object NdefUtils {
         }
         if (records.isEmpty()) return false
         val message = if (1 == records.size) NdefMessage(records[0]) else NdefMessage(records.toTypedArray())
+        println("测试: ${ByteUtils.byteArrayToHexString(message.toByteArray())}")
 
         val ndef = Ndef.get(tag)
         val result = ndef.runCatching {
@@ -66,7 +67,7 @@ object NdefUtils {
         val result = runCatching {
             when (getCardTypeByTechList(tag.techList)) {
                 CardType.M1 -> {
-                    M1CardUtils.format(tag)
+                    M1CardUtils.newFormat(tag)
                 }
                 else -> {
 
@@ -77,6 +78,22 @@ object NdefUtils {
         }
 
         return result.isSuccess
+    }
+
+    fun copy(tag: Tag, copySource: CardData): Boolean {
+        val type = getCardTypeByTechList(tag.techList)
+        when (type) {
+            CardType.M1 -> {
+                val m1Data = copySource.mifareClassicData
+                return if (m1Data == null) false
+                else M1CardUtils.copy(tag, m1Data)
+            }
+
+
+            else -> {
+                return false
+            }
+        }
     }
 
     fun getCardTypeByTechList(techList: Array<String>): CardType {

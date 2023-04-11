@@ -37,6 +37,17 @@
                 android:textSize="18sp"
                 android:text="复制" />
 
+            <TextView
+                android:id="@+id/superman"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:padding="5dp"
+                android:gravity="center"
+                android:background="#8BC34A"
+                android:textSize="18sp"
+                android:text="超人" />
+
 
         </LinearLayout>
 

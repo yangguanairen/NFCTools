@@ -2,6 +2,8 @@ package com.sena.nfctools.widget.fragment
 
 import android.content.Context
 import android.content.Intent
+import android.nfc.cardemulation.NfcFCardEmulation
+import android.nfc.tech.IsoDep
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity

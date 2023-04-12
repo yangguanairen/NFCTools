@@ -4,7 +4,6 @@ import android.nfc.Tag
 import android.nfc.tech.MifareClassic
 import android.nfc.tech.NfcA
 import com.sena.nfctools.bean.*
-import java.nio.charset.Charset
 
 
 /**
@@ -261,15 +260,41 @@ object M1CardUtils {
                 continue
             }
 
+            if (keyB != null) {
+                val block3 = mifareClassic.readBlock(bIndex + 3)
+                if (M1AccessControlUtils.canReadDataBlockByKeyB(0, block3[6], block3[7], block3[8])) {
+
+                } else {
+
+                }
+
+                val decBlock = (keyA ?: defaultKeyA) + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + keyB
+
+            } else if (keyA != null) {
+                val block3 = mifareClassic.readBlock(bIndex + 3)
+                if (M1AccessControlUtils.canReadDataBlockByKeyB(0, block3[6], block3[7], block3[8])) {
+
+                } else {
+
+                }
+
+                if (M1AccessControlUtils.canReadKeyBByKeyA(block3[6], block3[7], block3[8])) {
+                    keyB = byteArrayOf(block3[10], block3[11], block3[12], block3[13], block3[14], block3[15])
+                }
+
+                val decBlock = keyA + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + (keyB ?: defaultKeyB)
+            }
+
 
             val blockList = arrayListOf<MifareClassicBlock>()
 
             for (j in 0 until bCount) {
+                if (M1AccessControlUtils.)
                 val data = mifareClassic.readBlock(bIndex)
                 blockList.add(MifareClassicBlock(bIndex, data))
-                val hexStr = ByteUtils.byteArrayToHexString(data, separator = " ")
-                println("$i 扇区 $j 块: $hexStr")
-                println("对应文本: ${String(data, Charset.forName("US-ASCII"))}")
+//                val hexStr = ByteUtils.byteArrayToHexString(data, separator = " ")
+//                println("$i 扇区 $j 块: $hexStr")
+//                println("对应文本: ${String(data, Charset.forName("US-ASCII"))}")
                 bIndex++
             }
 

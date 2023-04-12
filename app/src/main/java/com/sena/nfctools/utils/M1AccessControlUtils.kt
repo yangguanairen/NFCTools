@@ -45,6 +45,27 @@ object M1AccessControlUtils {
         return (bit_0 shl 2) or (bit_1 shl 1) or bit_2
     }
 
+    fun canReadDataBlockByKeyA(blockIndex: Int, byte6: Byte, byte7: Byte, byte8: Byte): Boolean {
+        val code = getControlCode(blockIndex, byte6, byte7, byte8)
+
+        return 0B000 == code || 0B010 == code || 0B100 == code ||
+                0B110 == code || 0B001 == code
+    }
+
+    fun canReadDataBlockByKeyB(blockIndex: Int, byte6: Byte, byte7: Byte, byte8: Byte): Boolean {
+        val code = getControlCode(blockIndex, byte6, byte7, byte8)
+
+        return 0B000 == code || 0B010 == code || 0B100 == code ||
+                0B110 == code || 0B001 == code || 0B011 == code ||
+                0B101 == code
+    }
+
+    fun canReadKeyBByKeyA(byte6: Byte, byte7: Byte, byte8: Byte): Boolean {
+        val code = getControlCode(3, byte6, byte7, byte8)
+
+        return 0B000 == code || 0B010 == code || 0B001 == code
+    }
+
 
     fun parseAccessControl(bIndex: Int, byte6: Byte, byte7: Byte, byte8: Byte) {
 

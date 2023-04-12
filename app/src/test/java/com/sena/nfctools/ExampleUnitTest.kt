@@ -12,8 +12,10 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        val b1 = byteArrayOf(0, 1, 10)
-        val b = b1 + byteArrayOf(-1, 7, 11)
-        println(b.joinToString(separator = ", "))
+        val list = arrayListOf(1, 2, 3, 4, 5)
+        val a = list.filter {
+            it > 3
+        }.first()
+        println("接如果: $a")
     }
 }

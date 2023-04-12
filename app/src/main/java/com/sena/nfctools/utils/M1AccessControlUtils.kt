@@ -14,97 +14,44 @@ object M1AccessControlUtils {
      * @param accessControlData size = 4
      * 默认是使用KeyB进行写入，KeyA能写入的地方，KeyB就可以，反之不行
      */
-    fun canRewriteDataBlock(blockIndex: Int, accessControlData: ByteArray): Boolean {
-        val byte7 = accessControlData[0].toInt()
-        val byte8 = accessControlData[1].toInt()
-        val byte9 = accessControlData[2].toInt()
+    fun canRewriteDataBlock(blockIndex: Int, byte6: Byte, byte7: Byte, byte8: Byte): Boolean {
+        val code = getControlCode(blockIndex, byte6, byte7, byte8)
 
-        val block_bit_0 = (byte7 shr (4 + blockIndex)) and 0x01
-        val block_bit_1 = (byte8 shr (4 + blockIndex)) and 0x01
-        val block_bit_2 = (byte9 shr (4 + blockIndex)) and 0x01
-        val block_access_code = (block_bit_0 shl 2) or (block_bit_1 shl 1) or block_bit_2
-
-        return 0B000 == block_access_code || 0B100 == block_access_code ||
-                0B110 == block_access_code || 0B011 == block_access_code
+        return 0B000 == code || 0B100 == code ||
+                0B110 == code || 0B011 == code
     }
 
-    fun canReadWriteDataBlock(blockIndex: Int, byte7: Byte, byte6: Byte, byte5: Byte): Boolean = canRewriteDataBlock(
-        blockIndex, byteArrayOf(byte7, byte6, byte5)
-    )
+    fun canRewriteControlCodeByKeyB(byte6: Byte, byte7: Byte, byte8: Byte): Boolean {
+        val code = getControlCode(3, byte6, byte7, byte8)
 
-    fun canRewriteAccessCode(accessControlData: ByteArray): Boolean {
-        val byte7 = accessControlData[0].toInt()
-        val byte8 = accessControlData[1].toInt()
-        val byte9 = accessControlData[2].toInt()
-
-        val block_bit_0 = (byte7 shr 7) and 0x01
-        val block_bit_1 = (byte8 shr 7) and 0x01
-        val block_bit_2 = (byte9 shr 7) and 0x01
-        val block_access_code = (block_bit_0 shl 2) or (block_bit_1 shl 1) or block_bit_2
-
-        return 0B001 == block_access_code || 0B011 == block_access_code || 0B101 == block_access_code
+        return 0B001 == code || 0B011 == code || 0B101 == code
     }
 
-    /**
-     * 在写入操作上，KeyA和KeyB是一致的
-     */
-    fun canRewriteKey(accessControlData: ByteArray): Boolean {
-        return canRewriteKeyA(accessControlData)
+    fun canRewriteControlCodeByKeyA(byte6: Byte, byte7: Byte, byte8: Byte): Boolean {
+        val code = getControlCode(3, byte6, byte7, byte8)
+
+        return 0B001 == code
     }
 
-    fun canRewriteKeyA(accessControlData: ByteArray): Boolean {
-        val byte7 = accessControlData[0].toInt()
-        val byte8 = accessControlData[1].toInt()
-        val byte9 = accessControlData[2].toInt()
+    private fun getControlCode(blockIndex: Int, byte6: Byte, byte7: Byte, byte8: Byte): Int {
+        val int6 = byte6.toInt()
+        val int7 = byte7.toInt()
+        val int8 = byte8.toInt()
 
-        val block_bit_0 = (byte7 shr 7) and 0x01
-        val block_bit_1 = (byte8 shr 7) and 0x01
-        val block_bit_2 = (byte9 shr 7) and 0x01
-        val block_access_code = (block_bit_0 shl 2) or (block_bit_1 shl 1) or block_bit_2
+        val bit_0 = ((int6 shr (4 + blockIndex)) and 0x01).inv() and 0x01  // 字节6的每一位取反
+        val bit_1 = (int7 shr (4 + blockIndex)) and 0x01
+        val bit_2 = (int8 shr (4 + blockIndex)) and 0x01
 
-        return 0B000 == block_access_code || 0B100 == block_access_code ||
-                0B001 == block_access_code || 0B011 == block_access_code
-    }
-
-    fun canRewriteKeyB(accessControlData: ByteArray): Boolean {
-        val byte7 = accessControlData[0].toInt()
-        val byte8 = accessControlData[1].toInt()
-        val byte9 = accessControlData[2].toInt()
-
-        val block_bit_0 = (byte7 shr 7) and 0x01
-        val block_bit_1 = (byte8 shr 7) and 0x01
-        val block_bit_2 = (byte9 shr 7) and 0x01
-        val block_access_code = (block_bit_0 shl 2) or (block_bit_1 shl 1) or block_bit_2
-
-        return 0B000 == block_access_code || 0B100 == block_access_code ||
-                0B001 == block_access_code || 0B011 == block_access_code
+        return (bit_0 shl 2) or (bit_1 shl 1) or bit_2
     }
 
 
-    fun parseAccessControl(bIndex: Int, controlData: ByteArray) {
-        val byte6 = controlData[0].toInt()
-        val byte7 = controlData[1].toInt()
-        val byte8 = controlData[2].toInt()
+    fun parseAccessControl(bIndex: Int, byte6: Byte, byte7: Byte, byte8: Byte) {
 
-        val block3_c10 = if ((byte6 shr 7) and 0x01 == 0) 1 else 0
-        val block3_c20 = if ((byte7 shr 7) and 0x01 == 0) 1 else 0
-        val block3_c30 = if ((byte8 shr 7) and 0x01 == 0) 1 else 0
-        val block3_access_control = (block3_c10 shl 2) or (block3_c20 shl 1) or block3_c30
-
-        val block2_c10 = (byte6 shr 6) and 0x01
-        val block2_c20 = (byte7 shr 6) and 0x01
-        val block2_c30 = (byte8 shr 6) and 0x01
-        val block2_access_control = (block2_c10 shl 2) or (block2_c20 shl 1) or block3_c30
-
-        val block1_c10 = (byte6 shr 5) and 0x01
-        val block1_c20 = (byte7 shr 5) and 0x01
-        val block1_c30 = (byte8 shr 5) and 0x01
-        val block1_access_control = (block1_c10 shl 2) or (block1_c20 shl 1) or block1_c30
-
-        val block0_c10 = (byte6 shr 4) and 0x01
-        val block0_c20 = (byte7 shr 4) and 0x01
-        val block0_c30 = (byte8 shr 4) and 0x01
-        val block0_access_control = (block0_c10 shl 2) or (block0_c20 shl 1) or block0_c30
+        val block3_access_control = getControlCode(3, byte6, byte7, byte8)
+        val block2_access_control = getControlCode(2, byte6, byte7, byte8)
+        val block1_access_control = getControlCode(1, byte6, byte7, byte8)
+        val block0_access_control = getControlCode(0, byte6, byte7, byte8)
 
         println("块号: $bIndex, ${printDataBlockAccessControlInfo(block0_access_control)}")
         println("块号: ${bIndex + 1}, ${printDataBlockAccessControlInfo(block1_access_control)}")

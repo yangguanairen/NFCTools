@@ -8,14 +8,14 @@ package com.sena.nfctools.bean
  */
 
 data class MifareClassicData(
-    val sectorCount: Int,
-    val blockCount: Int,
-    val size: Int,
-    val type: Int,
-    val typeStr: String,
-    val atqa: ByteArray,
-    val sak: Short,
-    val sectorList: List<MifareClassicSector>
+    var sectorCount: Int = -1,
+    var blockCount: Int = -1,
+    var size: Int = -1,
+    var type: Int = -1,
+    var typeStr: String = "",
+    var atqa: ByteArray = ByteArray(0),
+    var sak: Short = 0,
+    var sectorList: List<MifareClassicSector> = emptyList()
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -43,7 +43,8 @@ data class MifareClassicSector(
     val sectorIndex: Int,
     val blockStartIndex: Int,
     val blockCount: Int,
-    val key: ByteArray,
+    val keyA: ByteArray?,
+    val keyB: ByteArray?,
     val blockList: List<MifareClassicBlock>
 ) {
     override fun equals(other: Any?): Boolean {
@@ -51,7 +52,8 @@ data class MifareClassicSector(
         return this.sectorIndex == other.sectorIndex &&
                 this.blockStartIndex == other.blockStartIndex &&
                 this.blockCount == other.blockCount &&
-                this.key.contentEquals(other.key) &&
+                this.keyA.contentEquals(other.keyA) &&
+                this.keyB.contentEquals(other.keyB) &&
                 this.blockList == other.blockList
     }
 
@@ -59,7 +61,8 @@ data class MifareClassicSector(
         var result = sectorIndex
         result = 31 * result + blockStartIndex
         result = 31 * result + blockCount
-        result = 31 * result + key.contentHashCode()
+        result = 31 * result + keyA.contentHashCode()
+        result = 31 * result + keyB.contentHashCode()
         result = 31 * result + blockList.hashCode()
         return result
     }

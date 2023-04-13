@@ -58,20 +58,12 @@ object M1CardUtils {
     fun readM1Card(tag: Tag): MifareClassicData? {
 
         val data = MifareClassicData()
-        val isSuccess = invoke(tag) {
-
-        }
-        if (isSuccess)
-
-        val mifareClassic = MifareClassic.get(tag)
-        try {
-            mifareClassic.connect()
-
-            val sectorCount = mifareClassic.sectorCount // 扇区数
-            val blockCont = mifareClassic.blockCount // 总块数
-            val size = mifareClassic.size // 内存大小
-            val type = mifareClassic.type
-            val typeStr = when (mifareClassic.type) { // 类型
+        val isSuccess = invoke(tag) { mifareClassic ->
+            data.sectorCount = mifareClassic.sectorCount
+            data.blockCount = mifareClassic.blockCount
+            data.size = mifareClassic.size
+            data.type = mifareClassic.type
+            data.typeStr = when (mifareClassic.type) { // 类型
                 MifareClassic.TYPE_CLASSIC -> "TYPE_CLASSIC"
                 MifareClassic.TYPE_PLUS -> "TYPE_PLUS"
                 MifareClassic.TYPE_PRO -> "TYPE_PRO"
@@ -79,38 +71,15 @@ object M1CardUtils {
                 // 如果没找到上述三个类型，自动抛出运行时异常
                 else -> "TYPE_UNKNOWN"
             }
-            val sectorList = readBlock(mifareClassic, sectorCount)
-
-            val a = NfcA.get(tag)
-            val atqa = a.atqa
-            atqa.forEach {
-                println("atqa: $it")
-            }
-            val atqaHex = ByteUtils.byteArrayToHexString(atqa)
-            val sak = a.sak
-            val sakHex = ByteUtils.shortToHexString(sak)
-            println("Info\n扇区数: $sectorCount\n总块数: $blockCont\n内存大小: $size\n类型: $type")
-            println("ATAQ: $atqaHex\nSAK: $sakHex")
-
-            return MifareClassicData(
-                sectorCount = sectorCount,
-                blockCount = blockCont,
-                size = size,
-                type = type,
-                typeStr = typeStr,
-                atqa = atqa,
-                sak = sak,
-                sectorList = sectorList
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
-        } finally {
-            try {
-                mifareClassic.close()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            val nfcA = NfcA.get(tag)
+            data.atqa = nfcA.atqa
+            data.sak = nfcA.sak
+            data.sectorList = readBlock(mifareClassic, data.sectorCount)
+        }
+        return if (isSuccess) {
+            data
+        } else {
+            null
         }
     }
 
@@ -241,12 +210,12 @@ object M1CardUtils {
         }
     }
 
-    private fun readBlock(mifareClassic: MifareClassic, sectorCount: Int, key: ByteArray = MifareClassic.KEY_DEFAULT): List<MifareClassicSector> {
+    private fun readBlock(mifareClassic: MifareClassic, sectorCount: Int): List<MifareClassicSector> {
         val sectorList = arrayListOf<MifareClassicSector>()
         for (i in 0 until sectorCount) {
 
             val bCount = mifareClassic.getBlockCountInSector(i) // //获得当前扇区的所包含块的数量
-            var bIndex = mifareClassic.sectorToBlock(i) //当前扇区的第1块的块号
+            val bIndex = mifareClassic.sectorToBlock(i) //当前扇区的第1块的块号
 
             val keyA = keyList.firstOrNull {
                 mifareClassic.authenticateSectorWithKeyA(i, it)
@@ -254,58 +223,38 @@ object M1CardUtils {
             var keyB = keyList.firstOrNull {
                 mifareClassic.authenticateSectorWithKeyB(i, it)
             }
-
             if (keyA == null && keyB == null) {
-                sectorList.add(MifareClassicSector(0, ))
+                sectorList.add(MifareClassicSector(0, bIndex, bCount, null, null, emptyList()))
+                println("$i 扇区, 无法读取")
                 continue
             }
-
-            if (keyB != null) {
-                val block3 = mifareClassic.readBlock(bIndex + 3)
-                if (M1AccessControlUtils.canReadDataBlockByKeyB(0, block3[6], block3[7], block3[8])) {
-
-                } else {
-
-                }
-
-                val decBlock = (keyA ?: defaultKeyA) + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + keyB
-
-            } else if (keyA != null) {
-                val block3 = mifareClassic.readBlock(bIndex + 3)
-                if (M1AccessControlUtils.canReadDataBlockByKeyB(0, block3[6], block3[7], block3[8])) {
-
-                } else {
-
-                }
-
-                if (M1AccessControlUtils.canReadKeyBByKeyA(block3[6], block3[7], block3[8])) {
-                    keyB = byteArrayOf(block3[10], block3[11], block3[12], block3[13], block3[14], block3[15])
-                }
-
-                val decBlock = keyA + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + (keyB ?: defaultKeyB)
+            val block3 = mifareClassic.readBlock(bIndex + 3)
+            if (keyA != null && keyB == null && M1AccessControlUtils.canReadKeyBByKeyA(block3[6], block3[7], block3[8])) {
+                keyB = byteArrayOf(block3[10], block3[11], block3[12], block3[13], block3[14], block3[15])
             }
-
 
             val blockList = arrayListOf<MifareClassicBlock>()
-
-            for (j in 0 until bCount) {
-                if (M1AccessControlUtils.)
-                val data = mifareClassic.readBlock(bIndex)
-                blockList.add(MifareClassicBlock(bIndex, data))
-//                val hexStr = ByteUtils.byteArrayToHexString(data, separator = " ")
-//                println("$i 扇区 $j 块: $hexStr")
-//                println("对应文本: ${String(data, Charset.forName("US-ASCII"))}")
-                bIndex++
+            for (j in 0 until bCount - 1) {
+                val canRead = if (keyB != null) M1AccessControlUtils.canReadDataBlockByKeyB(j, block3[6], block3[7], block3[8])
+                else M1AccessControlUtils.canReadDataBlockByKeyA(j, block3[6], block3[7], block3[8])
+                if (canRead) {
+                    val block = mifareClassic.readBlock(bIndex + j)
+                    blockList.add(MifareClassicBlock(bIndex + i, block))
+                    println("$i 扇区, $j 块区, ${ByteUtils.byteArrayToHexString(block, separator = " ")}")
+                } else {
+                    val block = ByteArray(0)
+                    blockList.add(MifareClassicBlock(bIndex + i, block))
+                    println("$i 扇区, $j 块区, 无法读取")
+                }
             }
+            val decBlock = (keyA ?: defaultKeyA) + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + (keyB ?: defaultKeyB)
+            blockList.add(MifareClassicBlock(bIndex + 3, decBlock))
+            println("$i 扇区, 4 块区, ${ByteUtils.byteArrayToHexString(decBlock, separator = " ")}")
 
             sectorList.add(
                 MifareClassicSector(
-                    sectorIndex = i,
-                    blockStartIndex = bIndex - bCount,
-                    blockCount = bCount,
-                    key = key,
-                    blockList = blockList
-                )
+                i, bIndex, bCount, keyA, keyB,  blockList
+            )
             )
         }
         return sectorList

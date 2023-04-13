@@ -116,7 +116,7 @@ object NdefUtils {
                 maxSize = ndef.maxSize
                 canMakeReadOnly = ndef.canMakeReadOnly()
                 isWritable = ndef.isWritable
-                ndefRecords = parseNdefRecord(ndef.ndefMessage.records)
+//                ndefRecords = parseNdefRecord(ndef.ndefMessage.records)
             }
         }.onFailure {
             it.printStackTrace()

@@ -2,7 +2,6 @@ package com.sena.nfctools.utils
 
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
-import android.nfc.tech.NfcA
 import com.sena.nfctools.bean.*
 
 
@@ -12,7 +11,7 @@ import com.sena.nfctools.bean.*
  * Date: 2023/3/27 18:29
  */
 
-object M1CardUtils {
+object M1ClassicUtils {
 
     val keyList = arrayOf(
         byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()),
@@ -55,26 +54,14 @@ object M1CardUtils {
     private val controlData = defaultKeyA + defaultControl + defaultKeyB
 
 
-    fun readM1Card(tag: Tag): MifareClassicData? {
-
-        val data = MifareClassicData()
+    fun readM1Card(tag: Tag): M1ClassicData? {
+        var data: M1ClassicData? = null
         val isSuccess = invoke(tag) { mifareClassic ->
-            data.sectorCount = mifareClassic.sectorCount
-            data.blockCount = mifareClassic.blockCount
-            data.size = mifareClassic.size
-            data.type = mifareClassic.type
-            data.typeStr = when (mifareClassic.type) { // 类型
-                MifareClassic.TYPE_CLASSIC -> "TYPE_CLASSIC"
-                MifareClassic.TYPE_PLUS -> "TYPE_PLUS"
-                MifareClassic.TYPE_PRO -> "TYPE_PRO"
-                // 这个不可能执行，MifareClassic的构造中，
-                // 如果没找到上述三个类型，自动抛出运行时异常
-                else -> "TYPE_UNKNOWN"
-            }
-            val nfcA = NfcA.get(tag)
-            data.atqa = nfcA.atqa
-            data.sak = nfcA.sak
-            data.sectorList = readBlock(mifareClassic, data.sectorCount)
+            data = M1ClassicData(
+                mifareClassic.type,
+                mifareClassic.size,
+                readBlock(mifareClassic)
+            )
         }
         return if (isSuccess) {
             data
@@ -148,54 +135,54 @@ object M1CardUtils {
     }
 
 
-    fun copy(tag: Tag, copySource: MifareClassicData): Boolean {
-        val mifareClassic = MifareClassic.get(tag)
-        val result = runCatching {
-            mifareClassic.connect()
-
-            // TODO: 校验内存大小的匹配性
-            val sCount = mifareClassic.sectorCount
-            val allBCount = mifareClassic.blockCount
-            if (sCount != copySource.sectorCount || allBCount != copySource.blockCount) {
-                throw Exception("被复制卡片与数据源不匹配!!")
-            }
-
-
-            // TODO: 暂且不复制密钥块和00块
-            for (i in 0 until sCount) {
-                if (!m1Auth(mifareClassic, i, MifareClassic.KEY_DEFAULT)) {
-//                    continue
-                    throw Exception("复制失败")
-                }
-                val bCount = mifareClassic.getBlockCountInSector(i)
-                var bIndex = mifareClassic.sectorToBlock(i)
-                val t = if (i == 0) {
-                    bIndex++
-                    1
-                } else {
-                    0
-                }
-
-                for (j in t until bCount) {
-                    val data = copySource.sectorList[i].blockList[j].data
-                    println(
-                        "块号: $bIndex, 复制数据: ${
-                            ByteUtils.byteArrayToHexString(
-                                data,
-                                separator = " "
-                            )
-                        }"
-                    )
-                    mifareClassic.writeBlock(bIndex++, data)
-                }
-            }
-        }.onFailure {
-            it.printStackTrace()
-        }
-        mifareClassic.runCatching { close() }
-
-        return result.isSuccess
-    }
+//    fun copy(tag: Tag, copySource: MifareClassicData): Boolean {
+//        val mifareClassic = MifareClassic.get(tag)
+//        val result = runCatching {
+//            mifareClassic.connect()
+//
+//            // TODO: 校验内存大小的匹配性
+//            val sCount = mifareClassic.sectorCount
+//            val allBCount = mifareClassic.blockCount
+//            if (sCount != copySource.sectorCount || allBCount != copySource.blockCount) {
+//                throw Exception("被复制卡片与数据源不匹配!!")
+//            }
+//
+//
+//            // TODO: 暂且不复制密钥块和00块
+//            for (i in 0 until sCount) {
+//                if (!m1Auth(mifareClassic, i, MifareClassic.KEY_DEFAULT)) {
+////                    continue
+//                    throw Exception("复制失败")
+//                }
+//                val bCount = mifareClassic.getBlockCountInSector(i)
+//                var bIndex = mifareClassic.sectorToBlock(i)
+//                val t = if (i == 0) {
+//                    bIndex++
+//                    1
+//                } else {
+//                    0
+//                }
+//
+//                for (j in t until bCount) {
+//                    val data = copySource.sectorList[i].blockList[j].data
+//                    println(
+//                        "块号: $bIndex, 复制数据: ${
+//                            ByteUtils.byteArrayToHexString(
+//                                data,
+//                                separator = " "
+//                            )
+//                        }"
+//                    )
+//                    mifareClassic.writeBlock(bIndex++, data)
+//                }
+//            }
+//        }.onFailure {
+//            it.printStackTrace()
+//        }
+//        mifareClassic.runCatching { close() }
+//
+//        return result.isSuccess
+//    }
 
     private fun m1Auth(m1: MifareClassic, pos: Int, key: ByteArray): Boolean {
         return if (m1.authenticateSectorWithKeyA(pos, key)) {
@@ -210,13 +197,14 @@ object M1CardUtils {
         }
     }
 
-    private fun readBlock(mifareClassic: MifareClassic, sectorCount: Int): List<MifareClassicSector> {
-        val sectorList = arrayListOf<MifareClassicSector>()
-        for (i in 0 until sectorCount) {
+    private fun readBlock(mifareClassic: MifareClassic): List<M1ClassicSector> {
+        val sectorList = arrayListOf<M1ClassicSector>()
+        for (i in 0 until mifareClassic.sectorCount) {
 
             val bCount = mifareClassic.getBlockCountInSector(i) // //获得当前扇区的所包含块的数量
             val bIndex = mifareClassic.sectorToBlock(i) //当前扇区的第1块的块号
 
+            // 暴力破解密钥A|B
             val keyA = keyList.firstOrNull {
                 mifareClassic.authenticateSectorWithKeyA(i, it)
             }
@@ -224,7 +212,7 @@ object M1CardUtils {
                 mifareClassic.authenticateSectorWithKeyB(i, it)
             }
             if (keyA == null && keyB == null) {
-                sectorList.add(MifareClassicSector(0, bIndex, bCount, null, null, emptyList()))
+                sectorList.add(M1ClassicSector(i))
                 println("$i 扇区, 无法读取")
                 continue
             }
@@ -233,29 +221,26 @@ object M1CardUtils {
                 keyB = byteArrayOf(block3[10], block3[11], block3[12], block3[13], block3[14], block3[15])
             }
 
-            val blockList = arrayListOf<MifareClassicBlock>()
+            // 读取块信息
+            val blockList = arrayListOf<M1ClassicBlock>()
             for (j in 0 until bCount - 1) {
                 val canRead = if (keyB != null) M1AccessControlUtils.canReadDataBlockByKeyB(j, block3[6], block3[7], block3[8])
                 else M1AccessControlUtils.canReadDataBlockByKeyA(j, block3[6], block3[7], block3[8])
                 if (canRead) {
                     val block = mifareClassic.readBlock(bIndex + j)
-                    blockList.add(MifareClassicBlock(bIndex + i, block))
+                    blockList.add(M1ClassicBlock(bIndex + i, block))
                     println("$i 扇区, $j 块区, ${ByteUtils.byteArrayToHexString(block, separator = " ")}")
                 } else {
-                    val block = ByteArray(0)
-                    blockList.add(MifareClassicBlock(bIndex + i, block))
+                    blockList.add(M1ClassicBlock(bIndex + i))
                     println("$i 扇区, $j 块区, 无法读取")
                 }
             }
             val decBlock = (keyA ?: defaultKeyA) + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + (keyB ?: defaultKeyB)
-            blockList.add(MifareClassicBlock(bIndex + 3, decBlock))
+            blockList.add(M1ClassicBlock(bIndex + 3, decBlock))
             println("$i 扇区, 4 块区, ${ByteUtils.byteArrayToHexString(decBlock, separator = " ")}")
 
-            sectorList.add(
-                MifareClassicSector(
-                i, bIndex, bCount, keyA, keyB,  blockList
-            )
-            )
+            // 保存信息
+            sectorList.add(M1ClassicSector(i, keyA, keyB, blockList))
         }
         return sectorList
     }

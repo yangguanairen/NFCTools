@@ -14,12 +14,12 @@ import com.google.gson.Gson
 import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.core.BasePopupView
 import com.sena.nfctools.CardViewModel
-import com.sena.nfctools.bean.CardData
+import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.databinding.FragmentReadBinding
 import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
-import com.sena.nfctools.utils.M1CardUtils
 import com.sena.nfctools.utils.NdefUtils
+import com.sena.nfctools.utils.NfcUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,9 +59,9 @@ class ReadFragment : BaseFragment() {
 
         lifecycleScope.launch {
             readingPopup.show()
-            val result: CardData? = withContext(Dispatchers.IO) {
+            val result: TagData? = withContext(Dispatchers.IO) {
                 context?.let {
-                    val cardData = NdefUtils.parse(tag)
+                    val cardData = NfcUtils.read(tag)
                     if (cardData == null) {
                         println("解析失败")
                         return@let null
@@ -85,7 +85,7 @@ class ReadFragment : BaseFragment() {
 
     }
 
-    private fun addNewCard(card: CardData) {
+    private fun addNewCard(card: TagData) {
         vm.put(card)
         println(Gson().toJson(vm.getCardList()))
         lifecycleScope.launch(Dispatchers.IO) {

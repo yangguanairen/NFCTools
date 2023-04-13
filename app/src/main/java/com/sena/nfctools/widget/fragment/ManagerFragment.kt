@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sena.nfctools.CardAdapter
 import com.sena.nfctools.CardViewModel
-import com.sena.nfctools.bean.CardData
+import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.databinding.FragmentManagerBinding
 
 
@@ -44,7 +44,7 @@ class ManagerFragment : BaseFragment() {
         mAdapter = CardAdapter()
         binding.recyclerView.adapter = mAdapter
         mAdapter.setOnItemClickListener { adapter, view, position ->
-            val item = adapter.data[position] as CardData
+            val item = adapter.data[position] as TagData
 
         }
 

@@ -3,7 +3,6 @@ package com.sena.nfctools.widget.fragment
 import android.content.Intent
 import android.nfc.NfcAdapter
 import android.nfc.Tag
-import android.nfc.tech.Ndef
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,12 +13,12 @@ import androidx.lifecycle.lifecycleScope
 import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.core.BasePopupView
 import com.sena.nfctools.CardViewModel
-import com.sena.nfctools.bean.CardData
 import com.sena.nfctools.bean.OptType
+import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.databinding.FragmentOtherBinding
-import com.sena.nfctools.utils.M1CardUtils
 import com.sena.nfctools.utils.NdefUtils
+import com.sena.nfctools.utils.NfcUtils
 import com.sena.nfctools.utils.Test
 import com.sena.nfctools.widget.popup.TipPopup
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +78,7 @@ class OtherFragment : BaseFragment() {
         }
     }
 
-    private var copyData: CardData? = null
+    private var copyData: TagData? = null
 
     override fun handleIntent(intent: Intent) {
         super.handleIntent(intent)
@@ -99,10 +98,11 @@ class OtherFragment : BaseFragment() {
             val result = withContext(Dispatchers.IO) {
                 when (curWriteData.opt) {
                     OptType.FORMAT -> {
-                        NdefUtils.format(tag)
+                        NfcUtils.format(tag)
                     }
                     OptType.COPY -> {
-                        NdefUtils.copy(tag, copyData!!)
+//                        NdefUtils.copy(tag, copyData!!)
+                        false
                     }
                     OptType.SAL -> {
 //                        M1CardUtils.ndefTest2(tag)

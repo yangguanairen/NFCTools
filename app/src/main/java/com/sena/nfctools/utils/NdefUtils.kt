@@ -4,13 +4,9 @@ import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
-import android.os.Build
+import android.nfc.tech.NdefFormatable
 import com.google.gson.Gson
-import com.sena.nfctools.NfcApplication
-import com.sena.nfctools.bean.CardData
-import com.sena.nfctools.bean.OptType
-import com.sena.nfctools.bean.RecordData
-import com.sena.nfctools.bean.WriteData
+import com.sena.nfctools.bean.*
 
 
 /**
@@ -21,26 +17,36 @@ import com.sena.nfctools.bean.WriteData
 
 object NdefUtils {
 
-    fun parse(tag: Tag): CardData? {
-        val cardData = CardData()
-        val isSuccess = parseBasicInfo(tag, cardData)
-        println("测试: ${Gson().toJson(cardData)}")
+    fun parse(tag: Tag): NdefData? {
+        val ndefData = NdefData()
+        val ndef = Ndef.get(tag)
+        val result = ndef?.runCatching {
+            connect()
 
-        when (getCardTypeByTechList(tag.techList)) {
-             CardType.M1 -> {
-                 cardData.mifareClassicData = M1CardUtils.readM1Card(tag)
-             }
-            else -> {}
+            ndefData.type = type
+            ndefData.maxSize = maxSize
+            ndefData.canMakeReadOnly = canMakeReadOnly()
+            ndefData.isWriteable = isWritable
+            ndefData.recordList = readNdefRecord(ndefMessage)
+        }?.onFailure {
+            it.printStackTrace()
         }
+        ndef?.runCatching { close() }
 
-        return if (isSuccess) {
-            cardData
-        } else {
+        return if (result?.isFailure == true) {
             null
+        } else {
+            ndefData
         }
     }
 
+//    private fun invoke(tag: Tag): Boolean {
+//
+//    }
+
     fun write(tag: Tag, writeDataList: List<WriteData>): Boolean {
+
+        val isNdefFormatable = tag.techList.contains("android.nfc.tech.NdefFormatable")
 
         val records = arrayListOf<NdefRecord>().apply {
             writeDataList.forEach { writeData ->
@@ -51,97 +57,65 @@ object NdefUtils {
         val message = if (1 == records.size) NdefMessage(records[0]) else NdefMessage(records.toTypedArray())
         println("测试: ${ByteUtils.byteArrayToHexString(message.toByteArray())}")
 
-        val ndef = Ndef.get(tag)
-        val result = ndef.runCatching {
-            ndef.connect()
-            ndef.writeNdefMessage(message)
-        }.onFailure {
-            it.printStackTrace()
-        }
-        ndef.runCatching { close() }
+        if (!isNdefFormatable) {
+            val ndef = Ndef.get(tag)
+            val result = ndef.runCatching {
+                ndef.connect()
+                ndef.writeNdefMessage(message)
+            }.onFailure {
+                it.printStackTrace()
+            }
+            ndef.runCatching { close() }
 
-        return result.isSuccess
+            return result.isSuccess
+        } else {
+            val ndefFormatable = NdefFormatable.get(tag)
+            val result = ndefFormatable.runCatching {
+                ndefFormatable.connect()
+                ndefFormatable.format(message)
+            }.onFailure {
+                it.printStackTrace()
+            }
+            ndefFormatable.runCatching { close() }
+
+            return result.isSuccess
+        }
+
+
     }
 
-    fun format(tag: Tag): Boolean {
-        val result = runCatching {
-            when (getCardTypeByTechList(tag.techList)) {
-                CardType.M1 -> {
-                    M1CardUtils.newFormat(tag)
-                }
-                else -> {
+//    fun copy(tag: Tag, copySource: CardData): Boolean {
+//        val type = getCardTypeByTechList(tag.techList)
+//        when (type) {
+//            CardType.M1 -> {
+//                val m1Data = copySource.mifareClassicData
+//                return if (m1Data == null) false
+//                else M1ClassicUtils.copy(tag, m1Data)
+//            }
+//
+//
+//            else -> {
+//                return false
+//            }
+//        }
+//    }
 
-                }
-            }
-        }.onFailure {
-            it.printStackTrace()
-        }
+//    fun getCardTypeByTechList(techList: Array<String>): CardType {
+//        techList.forEach {
+//            if ("mifareclassic" in it.lowercase()) {
+//                return CardType.M1
+//            }
+//        }
+//        return CardType.UNKNOWN
+//    }
 
-        return result.isSuccess
-    }
-
-    fun copy(tag: Tag, copySource: CardData): Boolean {
-        val type = getCardTypeByTechList(tag.techList)
-        when (type) {
-            CardType.M1 -> {
-                val m1Data = copySource.mifareClassicData
-                return if (m1Data == null) false
-                else M1CardUtils.copy(tag, m1Data)
-            }
-
-
-            else -> {
-                return false
-            }
-        }
-    }
-
-    fun getCardTypeByTechList(techList: Array<String>): CardType {
-        techList.forEach {
-            if ("mifareclassic" in it.lowercase()) {
-                return CardType.M1
-            }
-        }
-        return CardType.UNKNOWN
-    }
-
-    private fun parseBasicInfo(tag: Tag, cardData: CardData): Boolean {
-        val ndef = Ndef.get(tag)
-        val result = runCatching {
-            ndef.connect()
-            cardData.apply {
-                tagId = tag.id
-                techList = tag.techList.toList()
-                ndefType = ndef.type
-                maxSize = ndef.maxSize
-                canMakeReadOnly = ndef.canMakeReadOnly()
-                isWritable = ndef.isWritable
-//                ndefRecords = parseNdefRecord(ndef.ndefMessage.records)
-            }
-        }.onFailure {
-            it.printStackTrace()
-        }
-        runCatching {
-            ndef.close()
-        }
-        return result.isSuccess
-    }
-    private fun parseNdefRecord(records: Array<NdefRecord>): List<RecordData> {
-        val result = arrayListOf<RecordData>()
-        records.forEach { record ->
-            val tnf = record.tnf
-            val type = record.type
-            val payload = record.payload
-            result.add(RecordData(
-                tnf = tnf,
-                type = type,
-                payload = payload
-            ))
+    private fun readNdefRecord(ndefMessage: NdefMessage?): List<NdefRecordData> {
+        val result = arrayListOf<NdefRecordData>()
+        ndefMessage?.records?.forEach {
+            result.add(NdefRecordData(it.tnf, it.type, it.payload))
         }
         return result
     }
-
-
 }
 
 

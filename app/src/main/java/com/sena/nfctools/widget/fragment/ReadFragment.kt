@@ -20,6 +20,7 @@ import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
 import com.sena.nfctools.utils.NdefUtils
 import com.sena.nfctools.utils.NfcUtils
+import com.sena.nfctools.utils.Ntag21xUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,28 +60,37 @@ class ReadFragment : BaseFragment() {
 
         lifecycleScope.launch {
             readingPopup.show()
-            val result: TagData? = withContext(Dispatchers.IO) {
-                context?.let {
-                    val cardData = NfcUtils.read(tag)
-                    if (cardData == null) {
-                        println("解析失败")
-                        return@let null
-                    }
-                    cardData
-                }
+            val map = Ntag21xUtils.read(tag)
+            map.forEach { t, u ->
+                println(t)
+                println(u)
+                println("-----------------")
             }
             readingPopup.dismiss()
-            if (result == null) {
-                Toast.makeText(mContext, "读取失败!!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(mContext, "读取成功!!", Toast.LENGTH_SHORT).show()
 
-                confirmPopup = XPopup.Builder(mContext)
-                    .asConfirm("读取到卡片$result, 是否要添加？", "") {
-                        addNewCard(result)
-                        confirmPopup.dismiss()
-                    }.show()
-            }
+
+//            val result: TagData? = withContext(Dispatchers.IO) {
+//                context?.let {
+//                    val cardData = NfcUtils.read(tag)
+//                    if (cardData == null) {
+//                        println("解析失败")
+//                        return@let null
+//                    }
+//                    cardData
+//                }
+//            }
+//            readingPopup.dismiss()
+//            if (result == null) {
+//                Toast.makeText(mContext, "读取失败!!", Toast.LENGTH_SHORT).show()
+//            } else {
+//                Toast.makeText(mContext, "读取成功!!", Toast.LENGTH_SHORT).show()
+//
+//                confirmPopup = XPopup.Builder(mContext)
+//                    .asConfirm("读取到卡片$result, 是否要添加？", "") {
+//                        addNewCard(result)
+//                        confirmPopup.dismiss()
+//                    }.show()
+//            }
         }
 
     }

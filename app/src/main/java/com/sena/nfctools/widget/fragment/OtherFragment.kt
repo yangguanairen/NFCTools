@@ -17,6 +17,7 @@ import com.sena.nfctools.bean.OptType
 import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.databinding.FragmentOtherBinding
+import com.sena.nfctools.utils.M1UltralightUtils
 import com.sena.nfctools.utils.NdefUtils
 import com.sena.nfctools.utils.NfcUtils
 import com.sena.nfctools.utils.Test
@@ -107,7 +108,8 @@ class OtherFragment : BaseFragment() {
                     OptType.SAL -> {
 //                        M1CardUtils.ndefTest2(tag)
 //                        M1CardUtils.salvation(tag)
-                        Test.bruteForce(tag)
+//                        Test.bruteForce(tag)
+                        M1UltralightUtils.read(tag)
                         false
                     }
                     else -> {

@@ -3,6 +3,9 @@ package com.sena.nfctools.utils
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
 import com.sena.nfctools.bean.*
+import com.sena.nfctools.newBean.MifareClassicBlock
+import com.sena.nfctools.newBean.MifareClassicData
+import com.sena.nfctools.newBean.MifareClassicSector
 
 
 /**
@@ -54,12 +57,21 @@ object M1ClassicUtils {
     private val controlData = defaultKeyA + defaultControl + defaultKeyB
 
 
-    fun readM1Card(tag: Tag): M1ClassicData? {
-        var data: M1ClassicData? = null
+    fun readM1Card(tag: Tag): MifareClassicData? {
+        var data: MifareClassicData? = null
         val isSuccess = invoke(tag) { mifareClassic ->
-            data = M1ClassicData(
-                mifareClassic.type,
+            data = MifareClassicData(
+                when (mifareClassic.type) { // 类型
+                    MifareClassic.TYPE_CLASSIC -> "TYPE_CLASSIC"
+                    MifareClassic.TYPE_PLUS -> "TYPE_PLUS"
+                    MifareClassic.TYPE_PRO -> "TYPE_PRO"
+                    // 这个不可能执行，MifareClassic的构造中，
+                    // 如果没找到上述三个类型，自动抛出运行时异常
+                    else -> "TYPE_UNKNOWN"
+                },
                 mifareClassic.size,
+                mifareClassic.sectorCount,
+                mifareClassic.blockCount,
                 readBlock(mifareClassic)
             )
         }
@@ -184,21 +196,8 @@ object M1ClassicUtils {
 //        return result.isSuccess
 //    }
 
-    private fun m1Auth(m1: MifareClassic, pos: Int, key: ByteArray): Boolean {
-        return if (m1.authenticateSectorWithKeyA(pos, key)) {
-            println("使用密钥A对$pos 扇区校验成功")
-            true
-        } else if (m1.authenticateSectorWithKeyB(pos, key)) {
-            println("使用密钥B ${ByteUtils.byteArrayToHexString(key)}对$pos 扇区校验成功")
-            true
-        } else {
-            println("$pos 扇区校验失败")
-            false
-        }
-    }
-
-    private fun readBlock(mifareClassic: MifareClassic): List<M1ClassicSector> {
-        val sectorList = arrayListOf<M1ClassicSector>()
+    private fun readBlock(mifareClassic: MifareClassic): List<MifareClassicSector> {
+        val sectorList = arrayListOf<MifareClassicSector>()
         for (i in 0 until mifareClassic.sectorCount) {
 
             val bCount = mifareClassic.getBlockCountInSector(i) // //获得当前扇区的所包含块的数量
@@ -212,7 +211,7 @@ object M1ClassicUtils {
                 mifareClassic.authenticateSectorWithKeyB(i, it)
             }
             if (keyA == null && keyB == null) {
-                sectorList.add(M1ClassicSector(i))
+                sectorList.add(MifareClassicSector(i, bIndex, bCount, "", "", emptyList()))
                 println("$i 扇区, 无法读取")
                 continue
             }
@@ -222,25 +221,26 @@ object M1ClassicUtils {
             }
 
             // 读取块信息
-            val blockList = arrayListOf<M1ClassicBlock>()
+            val blockList = arrayListOf<MifareClassicBlock>()
             for (j in 0 until bCount - 1) {
                 val canRead = if (keyB != null) M1AccessControlUtils.canReadDataBlockByKeyB(j, block3[6], block3[7], block3[8])
                 else M1AccessControlUtils.canReadDataBlockByKeyA(j, block3[6], block3[7], block3[8])
                 if (canRead) {
                     val block = mifareClassic.readBlock(bIndex + j)
-                    blockList.add(M1ClassicBlock(bIndex + i, block))
+                    blockList.add(MifareClassicBlock(bIndex + i, block))
                     println("$i 扇区, $j 块区, ${ByteUtils.byteArrayToHexString(block, separator = " ")}")
                 } else {
-                    blockList.add(M1ClassicBlock(bIndex + i))
+                    blockList.add(MifareClassicBlock(bIndex + i, ByteArray(0)))
                     println("$i 扇区, $j 块区, 无法读取")
                 }
             }
             val decBlock = (keyA ?: defaultKeyA) + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + (keyB ?: defaultKeyB)
-            blockList.add(M1ClassicBlock(bIndex + 3, decBlock))
+            blockList.add(MifareClassicBlock(bIndex + 3, decBlock))
             println("$i 扇区, 4 块区, ${ByteUtils.byteArrayToHexString(decBlock, separator = " ")}")
 
             // 保存信息
-            sectorList.add(M1ClassicSector(i, keyA, keyB, blockList))
+            sectorList.add(MifareClassicSector(i, bIndex, bCount, ByteUtils.byteArrayToHexString(keyA ?: ByteArray(0), separator = " "),
+                ByteUtils.byteArrayToHexString(keyB ?: ByteArray(0), separator = " "), blockList))
         }
         return sectorList
     }

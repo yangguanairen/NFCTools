@@ -17,6 +17,7 @@ import com.sena.nfctools.bean.OptType
 import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.databinding.FragmentOtherBinding
+import com.sena.nfctools.newBean.BaseCard
 import com.sena.nfctools.utils.M1UltralightUtils
 import com.sena.nfctools.utils.NdefUtils
 import com.sena.nfctools.utils.NfcUtils
@@ -79,7 +80,7 @@ class OtherFragment : BaseFragment() {
         }
     }
 
-    private var copyData: TagData? = null
+    private var copyData: BaseCard? = null
 
     override fun handleIntent(intent: Intent) {
         super.handleIntent(intent)

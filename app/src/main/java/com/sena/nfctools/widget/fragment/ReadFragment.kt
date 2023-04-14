@@ -16,6 +16,7 @@ import com.lxj.xpopup.core.BasePopupView
 import com.sena.nfctools.CardViewModel
 import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.databinding.FragmentReadBinding
+import com.sena.nfctools.newBean.BaseCard
 import com.sena.nfctools.utils.DataStoreUtils
 import com.sena.nfctools.utils.DataStoreUtils.dataStore
 import com.sena.nfctools.utils.NdefUtils
@@ -95,7 +96,7 @@ class ReadFragment : BaseFragment() {
 
     }
 
-    private fun addNewCard(card: TagData) {
+    private fun addNewCard(card: BaseCard) {
         vm.put(card)
         println(Gson().toJson(vm.getCardList()))
         lifecycleScope.launch(Dispatchers.IO) {

@@ -1,11 +1,11 @@
-package com.sena.nfctools.utils
+package com.sena.nfctools.utils.m1
 
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
-import com.sena.nfctools.bean.*
 import com.sena.nfctools.newBean.MifareClassicBlock
 import com.sena.nfctools.newBean.MifareClassicData
 import com.sena.nfctools.newBean.MifareClassicSector
+import com.sena.nfctools.utils.ByteUtils
 
 
 /**
@@ -14,7 +14,7 @@ import com.sena.nfctools.newBean.MifareClassicSector
  * Date: 2023/3/27 18:29
  */
 
-object M1ClassicUtils {
+object M1Utils {
 
     val keyList = arrayOf(
         byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()),
@@ -134,7 +134,7 @@ object M1ClassicUtils {
                 continue
             }
 
-            println("$i 扇区, KeyA: ${keyA?.let { ByteUtils.byteArrayToHexString(it, separator = ":")}}\nKeyB: ${ByteUtils.byteArrayToHexString(keyB, separator = ":")}")
+            println("$i 扇区, KeyA: ${keyA?.let { ByteUtils.byteArrayToHexString(it, separator = ":") }}\nKeyB: ${ByteUtils.byteArrayToHexString(keyB, separator = ":")}")
 
             // 这一步，KeyB一定不能为null，且控制字为FF:07:80:69, KeyA可能为null
             if (i != 0) { // 0扇区0块，出厂信息，不可修改
@@ -216,14 +216,24 @@ object M1ClassicUtils {
                 continue
             }
             val block3 = mifareClassic.readBlock(bIndex + 3)
-            if (keyA != null && keyB == null && M1AccessControlUtils.canReadKeyBByKeyA(block3[6], block3[7], block3[8])) {
+            if (keyA != null && keyB == null && M1AccessControlUtils.canReadKeyBByKeyA(
+                    block3[6],
+                    block3[7],
+                    block3[8]
+                )
+            ) {
                 keyB = byteArrayOf(block3[10], block3[11], block3[12], block3[13], block3[14], block3[15])
             }
 
             // 读取块信息
             val blockList = arrayListOf<MifareClassicBlock>()
             for (j in 0 until bCount - 1) {
-                val canRead = if (keyB != null) M1AccessControlUtils.canReadDataBlockByKeyB(j, block3[6], block3[7], block3[8])
+                val canRead = if (keyB != null) M1AccessControlUtils.canReadDataBlockByKeyB(
+                    j,
+                    block3[6],
+                    block3[7],
+                    block3[8]
+                )
                 else M1AccessControlUtils.canReadDataBlockByKeyA(j, block3[6], block3[7], block3[8])
                 if (canRead) {
                     val block = mifareClassic.readBlock(bIndex + j)
@@ -239,7 +249,8 @@ object M1ClassicUtils {
             println("$i 扇区, 4 块区, ${ByteUtils.byteArrayToHexString(decBlock, separator = " ")}")
 
             // 保存信息
-            sectorList.add(MifareClassicSector(i, bIndex, bCount, ByteUtils.byteArrayToHexString(keyA ?: ByteArray(0), separator = " "),
+            sectorList.add(MifareClassicSector(i, bIndex, bCount,
+                ByteUtils.byteArrayToHexString(keyA ?: ByteArray(0), separator = " "),
                 ByteUtils.byteArrayToHexString(keyB ?: ByteArray(0), separator = " "), blockList))
         }
         return sectorList

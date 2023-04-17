@@ -1,10 +1,9 @@
-package com.sena.nfctools.utils
+package com.sena.nfctools.utils.m0
 
 import android.nfc.Tag
 import android.nfc.tech.MifareUltralight
 import android.nfc.tech.Ndef
 import android.nfc.tech.NfcA
-import java.nio.ByteBuffer
 
 
 /**
@@ -13,7 +12,7 @@ import java.nio.ByteBuffer
  * Date: 2023/4/13 17:21
  */
 
-object M1UltralightUtils {
+object M0Utils {
 
     private fun invoke(tag: Tag, function: (mifareUltralight: MifareUltralight) -> Unit): Boolean {
 

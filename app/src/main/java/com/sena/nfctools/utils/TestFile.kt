@@ -22,7 +22,8 @@ object TestFile {
         val name = card.name
         val id = card.getId()
 
-        val cardsDir = File(context.cacheDir, "cards")
+        val cardsDir = File(context.externalCacheDir, "cards")
+        if (!cardsDir.exists()) cardsDir.mkdirs()
 
 
         val files = cardsDir.listFiles()?.filter {
@@ -30,11 +31,16 @@ object TestFile {
         }?.filter {
             it.name.startsWith(name)
         }?.forEach {
-            it.delete()
+            val t = it.delete()
+            println("删除了一个文件$t")
         }
 
         val newFile = File(cardsDir, "$id-$name")
-        if (newFile.exists()) newFile.deleteOnExit()
+        if (newFile.exists()) {
+            val result = newFile.delete()
+            println("删除结果: $result")
+        }
+//        if (!newFile.exists()) newFile.mkdir()
 
         val gson = Gson().toJson(card)
         newFile.writeText(gson)
@@ -42,7 +48,7 @@ object TestFile {
 
     fun getAllCards(context: Context): List<BaseCard> {
         val result = arrayListOf<BaseCard>()
-        val cardsDir = File(context.cacheDir, "cards")
+        val cardsDir = File(context.externalCacheDir, "cards")
         cardsDir.listFiles()?.filter {
             it.isFile && !it.name.startsWith(".")
         }?.forEach {

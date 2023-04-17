@@ -1,10 +1,11 @@
-package com.sena.nfctools.utils
+package com.sena.nfctools.other
 
 import android.net.wifi.WifiConfiguration
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
+import com.sena.nfctools.utils.ByteUtils
 import java.nio.ByteBuffer
 
 
@@ -147,7 +148,12 @@ object Nfc_Wifi_Test {
                     val unknown = ByteArray(fieldSize.toInt())
                     payload.get(unknown)
                     println("UNKNOWN_ID: $fieldId")
-                    println("UNKNOWN_CONTENT: ${ByteUtils.byteArrayToHexString(unknown, separator = " ")}")
+                    println("UNKNOWN_CONTENT: ${
+                        ByteUtils.byteArrayToHexString(
+                            unknown,
+                            separator = " "
+                        )
+                    }")
                 }
             }
         }
@@ -212,7 +218,12 @@ object Nfc_Wifi_Test {
                     val unknown = ByteArray(fieldSize.toInt())
                     payload.get(unknown)
                     println("UNKNOWN_ID: $fieldId")
-                    println("UNKNOWN_CONTENT: ${ByteUtils.byteArrayToHexString(unknown, separator = " ")}")
+                    println("UNKNOWN_CONTENT: ${
+                        ByteUtils.byteArrayToHexString(
+                            unknown,
+                            separator = " "
+                        )
+                    }")
                 }
             }
         }

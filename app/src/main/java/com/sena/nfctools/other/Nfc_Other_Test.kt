@@ -1,4 +1,4 @@
-package com.sena.nfctools.utils
+package com.sena.nfctools.other
 
 import android.content.Context
 import android.nfc.NdefMessage
@@ -7,6 +7,7 @@ import android.nfc.Tag
 import android.nfc.tech.MifareClassic
 import android.nfc.tech.Ndef
 import android.os.Build
+import com.sena.nfctools.utils.ByteUtils
 
 
 /**
@@ -60,7 +61,12 @@ object Nfc_Other_Test {
                 println("RecordId: ${ByteUtils.byteArrayToHexString(record.id, separator = ":")}")
                 println("RecordTnf: ${ByteUtils.byteToHexString(record.tnf.toByte(), true)}")
                 println("RecordType: ${String(record.type)}")
-                println("RecordPayload: ${ByteUtils.byteArrayToHexString(record.payload, separator = " ")}")
+                println("RecordPayload: ${
+                    ByteUtils.byteArrayToHexString(
+                        record.payload,
+                        separator = " "
+                    )
+                }")
                 println("Sting: ${String(record.payload)}")
 //                val payload = ByteBuffer.wrap(record.payload)
 

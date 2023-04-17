@@ -3,13 +3,7 @@ package com.sena.nfctools
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.newBean.BaseCard
-import com.sena.nfctools.utils.ByteUtils
-import com.sena.nfctools.utils.DataStoreUtils
-import com.sena.nfctools.utils.DataStoreUtils.dataStore
 import com.sena.nfctools.utils.TestFile
 import java.lang.Exception
 
@@ -38,7 +32,7 @@ class CardViewModel : ViewModel() {
         isChange.postValue(true)
     }
 
-    fun put(card: BaseCard) {
+    fun put(context: Context, card: BaseCard) {
         val iterator = cardList.iterator()
         while (iterator.hasNext()) {
             val item = iterator.next()
@@ -47,6 +41,7 @@ class CardViewModel : ViewModel() {
             }
         }
         cardList.add(card)
+        TestFile.addNewCard(context, card)
         isChange.postValue(true)
     }
 

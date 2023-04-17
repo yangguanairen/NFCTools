@@ -1,5 +1,6 @@
-package com.sena.nfctools.utils
+package com.sena.nfctools.utils.ndef
 
+import com.sena.nfctools.other.Nfc_Wifi_Test
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 

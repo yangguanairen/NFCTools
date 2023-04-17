@@ -2,9 +2,7 @@ package com.sena.nfctools
 
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
-import com.sena.nfctools.bean.TagData
 import com.sena.nfctools.newBean.BaseCard
-import com.sena.nfctools.utils.ByteUtils
 
 
 /**

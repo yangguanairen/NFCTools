@@ -30,7 +30,7 @@ data class NdefData(
 data class RecordData(
     val tnf: String,  // Record类型, 比如MIME, URI...
     val type: String,
-    val payload: String
+    val payload: ByteArray
 )
 
 data class MifareClassicData(

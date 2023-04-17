@@ -1,7 +1,8 @@
-package com.sena.nfctools.utils
+package com.sena.nfctools.other
 
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
+import com.sena.nfctools.utils.ByteUtils
 
 
 /**

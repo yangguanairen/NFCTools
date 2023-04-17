@@ -16,6 +16,7 @@ import com.sena.nfctools.bean.OptType
 import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.databinding.FragmentWriteBinding
 import com.sena.nfctools.utils.NdefUtils
+import com.sena.nfctools.utils.NfcUtils
 import com.sena.nfctools.widget.popup.TipPopup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -93,7 +94,7 @@ class WriteFragment : BaseFragment() {
         }
         lifecycleScope.launch {
             val isSuccess = withContext(Dispatchers.IO) {
-                NdefUtils.write(tag, dataList)
+                NfcUtils.write(tag, dataList)
             }
 
             loadingPopup.dismiss()

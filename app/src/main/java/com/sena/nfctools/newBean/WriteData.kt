@@ -3,6 +3,7 @@ package com.sena.nfctools.bean
 import android.nfc.NdefRecord
 import android.os.Build
 import com.sena.nfctools.NfcApplication
+import com.sena.nfctools.utils.ndef.WifiInfoUtils
 
 
 /**
@@ -20,6 +21,7 @@ data class WriteData(
             OptType.TEXT -> createTextRecord()
             OptType.APPLICATION -> createAppRecord()
             OptType.URL -> createUrlRecord()
+            OptType.WIFI -> WifiInfoUtils.createWifiRecord(this)
             else -> null
         }
     }

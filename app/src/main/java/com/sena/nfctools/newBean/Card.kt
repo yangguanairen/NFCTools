@@ -34,7 +34,7 @@ class M1Card(tagData: TagData, nfcAData: NfcAData) : BaseCard("M1") {
     }
 }
 
-class Ntag215Card(tagData: TagData, nfcAData: NfcAData) : BaseCard("NTAG215") {
+class Ntag21xCard(name: String, tagData: TagData, nfcAData: NfcAData) : BaseCard(name) {
 
     var mTagData: TagData = tagData
     var mNfcAData: NfcAData = nfcAData

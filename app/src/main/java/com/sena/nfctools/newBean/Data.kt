@@ -56,6 +56,7 @@ data class MifareClassicBlock(
 )
 
 data class Ntag21xData(
+    val cardName: String,
     val type: String,
     val dataSize: Int, // 可以读写的大小
     val maxSize: Int,  // 卡片总大小

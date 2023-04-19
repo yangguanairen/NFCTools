@@ -77,7 +77,6 @@ object Nfc_Wifi_Test {
         buffer.putShort(AUTH_TYPE_FIELD_ID)
         buffer.putShort(2.toShort())
         buffer.putShort(authType)
-
         buffer.putShort(NETWORK_KEY_FIELD)
         buffer.putShort(passwdSize)
         buffer.put(key.toByteArray())

@@ -34,20 +34,20 @@ object Ntag21xUtils {
             when (cc[2].toInt()) {
                 0x12 -> {
                     return Ntag21xData(
-                        type, 144, 45 * 4,
-                        144 / 4, 45, readPages(m0, 0, 45)
+                        "NTAG213", type, 144, 45 * 4,
+                        144 / 4, 45, readPages(m0, 0, 44)
                     )
                 }
                 0x3E -> {
                     return Ntag21xData(
-                        type, 496, 135 * 4,
-                        496 / 4, 135, readPages(m0, 0, 135)
+                        "NTAG215", type, 496, 135 * 4,
+                        496 / 4, 135, readPages(m0, 0, 134)
                     )
                 }
                 0x6D -> {
                     return Ntag21xData(
-                        type, 872, 231 * 4,
-                        872 / 4, 231, readPages(m0, 0, 231)
+                        "NTAG216", type, 872, 231 * 4,
+                        872 / 4, 231, readPages(m0, 0, 230)
                     )
                 }
                 else -> {

@@ -24,8 +24,9 @@ object NfcUtils {
             val nfcAData = readNfcA(tag) ?: return null
             val tagData = TagData(ByteUtils.byteArrayToHexString(tag.id, separator = ":"), tag.techList.toList())
 
-            val ntag215Card = Ntag215Card(tagData, nfcAData)
-            ntag215Card.ntag21xData = Ntag21xUtils.read(tag)
+            val ntag21xData = Ntag21xUtils.read(tag) ?: return null
+            val ntag215Card = Ntag21xCard(ntag21xData.cardName, tagData, nfcAData)
+            ntag215Card.ntag21xData = ntag21xData
             if (techList.contains("android.nfc.tech.Ndef")) ntag215Card.ndefData = NdefUtils.readNdef(tag)
             return ntag215Card
         }

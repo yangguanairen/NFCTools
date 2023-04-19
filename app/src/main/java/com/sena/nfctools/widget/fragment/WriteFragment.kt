@@ -17,6 +17,7 @@ import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.databinding.FragmentWriteBinding
 import com.sena.nfctools.utils.NdefUtils
 import com.sena.nfctools.utils.NfcUtils
+import com.sena.nfctools.utils.ndef.WifiInfoUtils
 import com.sena.nfctools.widget.popup.TipPopup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -76,6 +77,21 @@ class WriteFragment : BaseFragment() {
                 opt = OptType.URL,
                 data = mapOf(DataKey.KEY_URL to "https://www.baidu.com")
             ))
+            loadingPopup.show()
+        }
+        binding.writeWifi.setOnClickListener {
+            dataList.clear()
+            dataList.add(
+                WriteData(
+                opt = OptType.WIFI,
+                data = mapOf(
+                    DataKey.KEY_WIFI_SSID to "Aitmed-ECOS",
+                    DataKey.KEY_WIFI_PASSWD to "aitmed123",
+                    DataKey.KEY_WIFI_AUTH_TYPE to WifiInfoUtils.AUTH_TYPE_WPA2_PSK.toString(),
+                    DataKey.KEY_WIFI_ENC_TYPE to WifiInfoUtils.ENC_TYPE_NONE.toString()
+                )
+            )
+            )
             loadingPopup.show()
         }
 

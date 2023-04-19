@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.sena.nfctools.newBean.BaseCard
 import com.sena.nfctools.newBean.M1Card
-import com.sena.nfctools.newBean.Ntag215Card
+import com.sena.nfctools.newBean.Ntag21xCard
 import java.io.File
 
 
@@ -59,7 +59,7 @@ object TestFile {
                 val m1Card = Gson().fromJson<M1Card>(it.readText(), TypeToken.get(M1Card::class.java))
                 result.add(m1Card)
             } else if ("NTAG215" == name) {
-                val ntag215Card = Gson().fromJson(it.readText(), TypeToken.get(Ntag215Card::class.java))
+                val ntag215Card = Gson().fromJson(it.readText(), TypeToken.get(Ntag21xCard::class.java))
                 result.add(ntag215Card)
             }
         }

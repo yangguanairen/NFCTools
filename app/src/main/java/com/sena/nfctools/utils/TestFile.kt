@@ -58,9 +58,9 @@ object TestFile {
             if ("M1" == name) {
                 val m1Card = Gson().fromJson<M1Card>(it.readText(), TypeToken.get(M1Card::class.java))
                 result.add(m1Card)
-            } else if ("NTAG215" == name) {
-                val ntag215Card = Gson().fromJson(it.readText(), TypeToken.get(Ntag21xCard::class.java))
-                result.add(ntag215Card)
+            } else if ("NTAG215" == name || "NTAG213" == name || "NTAG216" == name) {
+                val ntag21xCard = Gson().fromJson(it.readText(), TypeToken.get(Ntag21xCard::class.java))
+                result.add(ntag21xCard)
             }
         }
 

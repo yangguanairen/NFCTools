@@ -12,10 +12,11 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        val list = arrayListOf(1, 2, 3, 4, 5)
-        val a = list.filter {
-            it > 3
-        }.first()
-        println("接如果: $a")
+        val list = arrayListOf<String>()
+
+        list.reduce { acc, s ->
+
+            s
+        }
     }
 }

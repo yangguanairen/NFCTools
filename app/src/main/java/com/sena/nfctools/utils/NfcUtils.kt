@@ -2,10 +2,12 @@ package com.sena.nfctools.utils
 
 import android.nfc.Tag
 import android.nfc.tech.NfcA
+import android.nfc.tech.NfcV
 import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.newBean.*
 import com.sena.nfctools.utils.m0.Ntag21xUtils
 import com.sena.nfctools.utils.m1.M1Utils
+import com.sena.nfctools.utils.nfcv.NfcVUtils
 
 // "android.nfc.tech.NfcA","android.nfc.tech.MifareUltralight","android.nfc.tech.Ndef"
 object NfcUtils {
@@ -29,6 +31,16 @@ object NfcUtils {
             ntag215Card.ntag21xData = ntag21xData
             if (techList.contains("android.nfc.tech.Ndef")) ntag215Card.ndefData = NdefUtils.readNdef(tag)
             return ntag215Card
+        } else if (techList.contains("android.nfc.tech.NfcV")) {
+
+            println("新测试： ${techList.joinToString(", ")}")
+            val nfcVData = readNfcV(tag) ?: return null
+            val tagData = TagData(ByteUtils.byteArrayToHexString(tag.id, separator = ":"), tag.techList.toList())
+
+            val nfcVCard = NfcVCard("ICodeSLIX", tagData, nfcVData)
+            nfcVCard.icodeSlixData = NfcVUtils.read15693(tag)
+            if (techList.contains("android.nfc.tech.Ndef")) nfcVCard.ndefData = NdefUtils.readNdef(tag)
+            return nfcVCard
         }
 
         return null
@@ -70,6 +82,19 @@ object NfcUtils {
             return null
         } finally {
             nfcA.runCatching { close() }
+        }
+    }
+
+    private fun readNfcV(tag: Tag): NfcVData? {
+        val nfcV = NfcV.get(tag) ?: return null
+        try {
+            nfcV.connect()
+            return NfcVData(nfcV.responseFlags, nfcV.dsfId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        } finally {
+            nfcV.runCatching { close() }
         }
     }
 

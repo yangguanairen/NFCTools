@@ -32,6 +32,8 @@ class M1Card(tagData: TagData, nfcAData: NfcAData) : BaseCard("M1") {
     override fun getId(): String {
         return mTagData.id
     }
+
+
 }
 
 class Ntag21xCard(name: String, tagData: TagData, nfcAData: NfcAData) : BaseCard(name) {
@@ -52,5 +54,26 @@ class Ntag21xCard(name: String, tagData: TagData, nfcAData: NfcAData) : BaseCard
     override fun getId(): String {
         return mTagData.id
     }
+}
+
+class NfcVCard(name: String, tagData: TagData, nfcVData: NfcVData) : BaseCard(name) {
+
+    var mTagData: TagData = tagData
+    var mNfcAData: NfcVData = nfcVData
+
+    var icodeSlixData: T15693Data? = null
+
+    var ndefData: NdefData? = null
+
+    override fun buildMap(): Map<String, String> {
+        val result = mutableMapOf<String, String>()
+
+        return result
+    }
+
+    override fun getId(): String {
+        return mTagData.id
+    }
+
 }
 

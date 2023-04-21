@@ -17,7 +17,6 @@ import com.sena.nfctools.bean.OptType
 import com.sena.nfctools.bean.WriteData
 import com.sena.nfctools.databinding.FragmentOtherBinding
 import com.sena.nfctools.newBean.BaseCard
-import com.sena.nfctools.utils.m0.M0Utils
 import com.sena.nfctools.utils.NfcUtils
 import com.sena.nfctools.widget.popup.TipPopup
 import kotlinx.coroutines.Dispatchers
@@ -107,7 +106,8 @@ class OtherFragment : BaseFragment() {
 //                        M1CardUtils.ndefTest2(tag)
 //                        M1CardUtils.salvation(tag)
 //                        Test.bruteForce(tag)
-                        M0Utils.read(tag)
+//                        M0Utils.read(tag)
+//                        T15693Utils.format(tag)
                         false
                     }
                     else -> {

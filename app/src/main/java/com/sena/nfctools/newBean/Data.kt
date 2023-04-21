@@ -19,6 +19,11 @@ data class NfcAData(
     val sak: String
 )
 
+data class NfcVData(
+    val responseFlags: Byte,
+    val dsfid: Byte
+)
+
 data class NdefData(
     val formType: String,
     val maxSize: Int,
@@ -66,6 +71,17 @@ data class Ntag21xData(
 )
 
 data class Ntag21xPage(
+    val index: Int,
+    val data: ByteArray
+)
+
+data class T15693Data(
+    val blockCount: Int,
+    val blockSize: Int,
+    val blocks: List<T15693Block>
+)
+
+data class T15693Block(
     val index: Int,
     val data: ByteArray
 )

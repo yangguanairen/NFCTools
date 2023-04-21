@@ -3,6 +3,7 @@ package com.sena.nfctools.other
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
 import com.sena.nfctools.utils.ByteUtils
+import com.sena.nfctools.utils.nfcv.T15693
 
 
 /**
@@ -49,6 +50,53 @@ object Test {
         }
 
         mifareClassic.close()
+    }
+
+    fun readNfcV(tag: Tag) {
+
+        val iCodeSliX = T15693.get(tag)
+        try {
+            iCodeSliX.connect()
+            val data = iCodeSliX.getSystemInfo()
+//            println(ByteUtils.byteArrayToHexString(data ?: ByteArray(0), separator = "  "))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        iCodeSliX.runCatching { close() }
+
+//        val nfcV = NfcV.get(tag) ?: return
+//        nfcV.connect()
+//
+//
+//        // flag bit meaning
+//        // bit7  子载波状态, 0 单载波, 1 双载波(不支持), 所以恒为0
+//        // bit6  Data_rate_flag
+//        // bit5 是否是命令库以外的命令 0 yes, 1 no
+//        // bit4 是否扩展protocol
+//
+//
+//        try {
+//
+//            val cmd = ByteArray(12)
+//            cmd[0] = 0x42 // 0x60
+//            cmd[1] = 0x23
+//            System.arraycopy(tag.id, 0, cmd, 2, tag.id.size)
+//            cmd[10] = 0 // offset
+//            cmd[11] = 1 // count, 0代表一次, 一次递增
+//            val res = nfcV.transceive(cmd)
+//            if (res[0] == 0x00.toByte()) {
+//                println("正确: " + ByteUtils.byteArrayToHexString(res, separator = " "))
+//            } else {
+//                println("错误: " + ByteUtils.byteArrayToHexString(res, separator = " "))
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        } finally {
+//            nfcV.runCatching { close() }
+//        }
+
+
+
     }
 }
 

@@ -3,9 +3,7 @@ package com.sena.nfctools.utils
 import android.content.Context
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.sena.nfctools.newBean.BaseCard
-import com.sena.nfctools.newBean.M1Card
-import com.sena.nfctools.newBean.Ntag21xCard
+import com.sena.nfctools.newBean.*
 import java.io.File
 
 
@@ -61,9 +59,11 @@ object TestFile {
             } else if ("NTAG215" == name || "NTAG213" == name || "NTAG216" == name) {
                 val ntag21xCard = Gson().fromJson(it.readText(), TypeToken.get(Ntag21xCard::class.java))
                 result.add(ntag21xCard)
+            } else if ("ICodeSLIX" == name) {
+                val iCodeSlixCard = Gson().fromJson(it.readText(), TypeToken.get(NfcVCard::class.java))
+                result.add(iCodeSlixCard)
             }
         }
-
         return result
     }
 

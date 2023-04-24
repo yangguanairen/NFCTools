@@ -4,7 +4,9 @@
 
     <uses-permission android:name="android.permission.NFC" />
 
-    <uses-feature android:name="android.hardware.nfc" android:required="true" />
+    <uses-feature
+        android:name="android.hardware.nfc"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -16,6 +18,12 @@
         android:theme="@style/Theme.NFCTools"
         tools:targetApi="31">
         <activity
+            android:name=".widget.cardViewer.MemoryDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".widget.cardViewer.CardDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".widget.MainActivity"
             android:exported="true">
             <intent-filter>
@@ -23,43 +31,40 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
 
-
-<!--                -->
-<!--                -->
+                <!--  -->
+                <!--  -->
             </intent-filter>
 
-<!--            全部写在上面，会导致无法正常安装，桌面无图表-->
+            <!-- 全部写在上面，会导致无法正常安装，桌面无图表 -->
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
-                <data android:mimeType="*/*" />
 
+                <data android:mimeType="*/*" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.nfc.action.TECH_DISCOVERED" />
-                <data android:mimeType="*/*" />
 
+                <data android:mimeType="*/*" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.nfc.action.TAG_DISCOVERED" />
-                <data android:mimeType="*/*" />
 
+                <data android:mimeType="*/*" />
             </intent-filter>
 
-
-            <meta-data android:name="android.nfc.action.TECH_DISCOVERED"
+            <meta-data
+                android:name="android.nfc.action.TECH_DISCOVERED"
                 android:resource="@xml/filter_nfc" />
-
         </activity>
 
         <provider
-            android:authorities="com.sena.nfctools.provider"
             android:name="androidx.core.content.FileProvider"
+            android:authorities="com.sena.nfctools.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/provider_paths" />
-
         </provider>
     </application>
 

@@ -11,12 +11,12 @@ import com.sena.nfctools.newBean.BaseCard
  * Date: 2023/3/28 18:18
  */
 
-class CardAdapter : BaseQuickAdapter<BaseCard, BaseViewHolder>(R.layout.item_card) {
+class CardAdapter : BaseQuickAdapter<Pair<String, String>, BaseViewHolder>(R.layout.item_card) {
 
-    override fun convert(holder: BaseViewHolder, item: BaseCard) {
+    override fun convert(holder: BaseViewHolder, item: Pair<String, String>) {
 
-        holder.setText(R.id.name, item.name)
-        holder.setText(R.id.id, item.getId())
+        holder.setText(R.id.name, item.second)
+        holder.setText(R.id.id, item.first)
     }
 
 

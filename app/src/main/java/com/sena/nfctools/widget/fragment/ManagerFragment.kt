@@ -1,15 +1,20 @@
 package com.sena.nfctools.widget.fragment
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.lxj.xpopup.XPopup
+import com.lxj.xpopup.interfaces.OnSelectListener
 import com.sena.nfctools.CardAdapter
 import com.sena.nfctools.CardViewModel
 import com.sena.nfctools.databinding.FragmentManagerBinding
 import com.sena.nfctools.newBean.BaseCard
+import com.sena.nfctools.widget.cardViewer.CardDetailActivity
+import com.sena.nfctools.widget.cardViewer.MemoryDetailActivity
 
 
 class ManagerFragment : BaseFragment() {
@@ -44,8 +49,20 @@ class ManagerFragment : BaseFragment() {
         mAdapter = CardAdapter()
         binding.recyclerView.adapter = mAdapter
         mAdapter.setOnItemClickListener { adapter, view, position ->
-            val item = adapter.data[position] as BaseCard
+            val item = adapter.data[position] as Pair<String, String>
+            val id = item.first
 
+
+            XPopup.Builder(mContext)
+                .asCenterList("", arrayOf("卡片信息", "内存详情")) { p, text ->
+                    val intent = when (p) {
+                        0 -> Intent(mContext, CardDetailActivity::class.java)
+                        1 -> Intent(mContext, MemoryDetailActivity::class.java)
+                        else -> return@asCenterList
+                    }
+                    intent.putExtra("ID", id)
+                    mContext.startActivity(intent)
+                }.show()
         }
 
         vm.isChange.observe(mOwner) {

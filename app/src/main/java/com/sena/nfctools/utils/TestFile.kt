@@ -44,6 +44,24 @@ object TestFile {
         newFile.writeText(gson)
     }
 
+    fun deleteCard(context: Context, id: String): Boolean {
+        val cardsDir = File(context.externalCacheDir, "cards")
+        if (!cardsDir.exists()) return false
+
+        var deleteCount = 0
+        val list = cardsDir.listFiles()?.filter {
+            it.isFile && !it.name.startsWith(".")
+        }?.forEach {
+            if (it.name.startsWith(id)) {
+                it.delete()
+                println("删除文件${it.name}")
+                deleteCount++
+            }
+        }
+        println("总共删除$deleteCount 个文件")
+        return deleteCount > 0
+    }
+
     fun getAllCards(context: Context): List<BaseCard> {
         val result = arrayListOf<BaseCard>()
         val cardsDir = File(context.externalCacheDir, "cards")
@@ -53,18 +71,65 @@ object TestFile {
             val t = it.name.split("-")
             val id = t[0]
             val name = t[1]
-            if ("M1" == name) {
-                val m1Card = Gson().fromJson<M1Card>(it.readText(), TypeToken.get(M1Card::class.java))
-                result.add(m1Card)
-            } else if ("NTAG215" == name || "NTAG213" == name || "NTAG216" == name) {
-                val ntag21xCard = Gson().fromJson(it.readText(), TypeToken.get(Ntag21xCard::class.java))
-                result.add(ntag21xCard)
-            } else if ("ICodeSLIX" == name) {
-                val iCodeSlixCard = Gson().fromJson(it.readText(), TypeToken.get(NfcVCard::class.java))
-                result.add(iCodeSlixCard)
+            deserialization(it.readText(), name)?.let { card ->
+                result.add(card)
             }
         }
         return result
+    }
+
+    fun getAllFiles(context: Context): List<Pair<String, String>> {
+        val result = arrayListOf<Pair<String, String>>()
+        val cardsDir = File(context.externalCacheDir, "cards")
+        cardsDir.listFiles()?.filter {
+            it.isFile && !it.name.startsWith(".")
+        }?.forEach {
+            val t = it.name.split("-")
+            if (t.size == 2) {
+                val id = t[0]
+                val name = t[1]
+                result.add(Pair(id, name))
+            }
+        }
+        return result
+    }
+
+    fun getCardById(context: Context, id: String): BaseCard? {
+        val cardDir = File(context.externalCacheDir, "cards")
+        val result = cardDir.listFiles()?.filter {
+            it.isFile && it.name.startsWith(id)
+        } ?: emptyList()
+        if (result.isEmpty()) {
+            return null
+        } else {
+            val file = result[0]
+            val name = file.name.split("-")[1]
+            val card = deserialization(file.readText(), name)
+            return card
+        }
+    }
+
+    private fun deserialization(text: String, type: String): BaseCard? {
+        try {
+            val card = when (type) {
+                "M1" -> {
+                    Gson().fromJson<M1Card>(text, TypeToken.get(M1Card::class.java))
+                }
+                "NTAG215", "NTAG213", "NTAG216" -> {
+                    Gson().fromJson(text, TypeToken.get(Ntag21xCard::class.java))
+                }
+                "ICodeSLIX" -> {
+                    Gson().fromJson(text, TypeToken.get(NfcVCard::class.java))
+                }
+                else -> {
+                    null
+                }
+            }
+            return card
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
     }
 
 }

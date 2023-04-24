@@ -12,11 +12,13 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        val list = arrayListOf<String>()
+        val ya = arrayListOf(50, 34)
+        val fei = arrayListOf(11, 13, 15, 17, 19, 21, 24, 28, 32)
 
-        list.reduce { acc, s ->
-
-            s
+        ya.forEach { y ->
+            fei.forEach { f ->
+                println("牙盘: $y, 飞轮: $f, 齿比: ${y.toFloat() / f}")
+            }
         }
     }
 }

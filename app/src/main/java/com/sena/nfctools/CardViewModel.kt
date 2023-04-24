@@ -14,17 +14,21 @@ import java.lang.Exception
  * Date: 2023/3/29 17:37
  */
 
+
+// 拒接在内存中保存大量card信息，byteArray有时候会过多
+
 class CardViewModel : ViewModel() {
 
 
-    private val cardList = mutableListOf<BaseCard>()
+    private val cardList = mutableListOf<Pair<String, String>>()
 
     val isChange: MutableLiveData<Boolean> = MutableLiveData(false)
 
     fun init(context: Context) {
         try {
             // TODO: 禁止主线程调用
-            val list = TestFile.getAllCards(context)
+//            val list = TestFile.getAllCards(context)
+            val list = TestFile.getAllFiles(context)
             cardList.addAll(list)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -36,27 +40,29 @@ class CardViewModel : ViewModel() {
         val iterator = cardList.iterator()
         while (iterator.hasNext()) {
             val item = iterator.next()
-            if (card.getId() == item.getId()) {
+            if (card.getId() == item.first) {
                 iterator.remove()
             }
         }
-        cardList.add(card)
+        cardList.add(Pair(card.getId(), card.name))
         TestFile.addNewCard(context, card)
         isChange.postValue(true)
     }
 
-    fun remove(card: BaseCard) {
+    fun remove(context: Context, id: String) {
         val iterator = cardList.iterator()
         while (iterator.hasNext()) {
             val item = iterator.next()
-            if (card.getId() == item.getId()) {
+            if (id == item.first) {
                 iterator.remove()
+                TestFile.deleteCard(context, id)
+//                TestFile.
             }
         }
         isChange.postValue(true)
     }
 
-    fun getCardList(): List<BaseCard> {
+    fun getCardList(): List<Pair<String, String>> {
         return cardList
     }
 

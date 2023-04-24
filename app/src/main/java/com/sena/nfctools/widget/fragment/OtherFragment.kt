@@ -76,7 +76,7 @@ class OtherFragment : BaseFragment() {
         }
     }
 
-    private var copyData: BaseCard? = null
+    private var copyData: Pair<String, String>? = null
 
     override fun handleIntent(intent: Intent) {
         super.handleIntent(intent)

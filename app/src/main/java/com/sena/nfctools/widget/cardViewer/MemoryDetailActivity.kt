@@ -13,7 +13,7 @@ class MemoryDetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMemoryDetailBinding
 
-    private val list = arrayListOf<Pair<String, String>>()
+    private var list: List<Pair<String, String>> = arrayListOf<Pair<String, String>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,15 +36,8 @@ class MemoryDetailActivity : AppCompatActivity() {
     private fun initData(id: String) {
         val card = CardFileUtils.getCardById(this, id) ?: return
 
-//        if (card is NfcVCard) {
-//            val data = card.icodeSlixData ?: return
-//            data.blocks.forEach {
-//                list.add(Pair(
-//                    "Block ${it.index}",
-//                    ByteUtils.byteArrayToHexString(it.data, separator = "")
-//                ))
-//            }
-//        }
+        list = card.buildMemoryDetail()
+
     }
 
     private fun initView() {

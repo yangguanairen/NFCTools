@@ -23,9 +23,9 @@ object M0Tools {
         try {
             m0.connect()
 
-            val extras = tag.getTechExtras(TagTechnology.NFC_A)
-            val sak = extras.getShort(NfcA.EXTRA_SAK)
-            val atqa = extras.getByteArray(NfcA.EXTRA_ATQA)
+            val nfcA = NfcA.get(tag)
+            val sak = nfcA.sak
+            val atqa = nfcA.atqa
 
 
             val t = m0.readPages(0)
@@ -72,7 +72,7 @@ object M0Tools {
                 }
             }
 
-            return null
+            return m0Data
         } catch (e: Exception) {
             e.printStackTrace()
             return null

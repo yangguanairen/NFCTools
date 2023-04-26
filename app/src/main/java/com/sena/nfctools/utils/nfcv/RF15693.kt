@@ -64,8 +64,9 @@ class RF15693 {
         val response = mNfcV.transceive(cmd)
         val status = response[0]
         if (status != 0x00.toByte()) return null
+        val blockStatus = response[1]
 
-        return response.sliceArray(1 until response.size)
+        return response.sliceArray(2 until response.size)
     }
 
     fun writeSingleBlock(offset: Int, data: ByteArray) {

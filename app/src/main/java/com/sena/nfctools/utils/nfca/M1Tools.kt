@@ -61,9 +61,9 @@ object M1Tools {
         var m1Data: M1Data = M1Data()
         val isSuccess = invoke(tag) { mifareClassic ->
 
-            val extras = tag.getTechExtras(TagTechnology.NFC_A)
-            val sak = extras.getShort(NfcA.EXTRA_SAK)
-            val atqa = extras.getByteArray(NfcA.EXTRA_ATQA)
+            val nfcA = NfcA.get(tag)
+            val sak = nfcA.sak
+            val atqa = nfcA.atqa
 
             m1Data.manufacturer = "NXP MifareClassic 1K"
             m1Data.sak = ByteUtils.byteToHexString(sak.toByte(), true)
@@ -243,10 +243,10 @@ object M1Tools {
                 else M1AccessControlUtils.canReadDataBlockByKeyA(j, block3[6], block3[7], block3[8])
                 if (canRead) {
                     val block = mifareClassic.readBlock(bIndex + j)
-                    blockList.add(Block(bIndex + i, block))
+                    blockList.add(Block(bIndex + j, block))
                     println("$i 扇区, $j 块区, ${ByteUtils.byteArrayToHexString(block, separator = " ")}")
                 } else {
-                    blockList.add(Block(bIndex + i, ByteArray(0)))
+                    blockList.add(Block(bIndex + j, ByteArray(0)))
                     println("$i 扇区, $j 块区, 无法读取")
                 }
             }

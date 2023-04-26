@@ -1,10 +1,10 @@
-package com.sena.nfctools.utils.m1
+package com.sena.nfctools.utils.nfca
 
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
-import com.sena.nfctools.newBean.MifareClassicBlock
-import com.sena.nfctools.newBean.MifareClassicData
-import com.sena.nfctools.newBean.MifareClassicSector
+import android.nfc.tech.NfcA
+import android.nfc.tech.TagTechnology
+import com.sena.nfctools.newBean.*
 import com.sena.nfctools.utils.ByteUtils
 
 
@@ -14,7 +14,7 @@ import com.sena.nfctools.utils.ByteUtils
  * Date: 2023/3/27 18:29
  */
 
-object M1Utils {
+object M1Tools {
 
     val keyList = arrayOf(
         byteArrayOf(0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte()),
@@ -57,26 +57,32 @@ object M1Utils {
     private val controlData = defaultKeyA + defaultControl + defaultKeyB
 
 
-    fun readM1Card(tag: Tag): MifareClassicData? {
-        var data: MifareClassicData? = null
+    fun readM1Card(tag: Tag): M1Data? {
+        var m1Data: M1Data = M1Data()
         val isSuccess = invoke(tag) { mifareClassic ->
-            data = MifareClassicData(
-                when (mifareClassic.type) { // 类型
-                    MifareClassic.TYPE_CLASSIC -> "TYPE_CLASSIC"
-                    MifareClassic.TYPE_PLUS -> "TYPE_PLUS"
-                    MifareClassic.TYPE_PRO -> "TYPE_PRO"
-                    // 这个不可能执行，MifareClassic的构造中，
-                    // 如果没找到上述三个类型，自动抛出运行时异常
-                    else -> "TYPE_UNKNOWN"
-                },
-                mifareClassic.size,
-                mifareClassic.sectorCount,
-                mifareClassic.blockCount,
-                readBlock(mifareClassic)
-            )
+
+            val extras = tag.getTechExtras(TagTechnology.NFC_A)
+            val sak = extras.getShort(NfcA.EXTRA_SAK)
+            val atqa = extras.getByteArray(NfcA.EXTRA_ATQA)
+
+            m1Data.manufacturer = "NXP MifareClassic 1K"
+            m1Data.sak = ByteUtils.byteToHexString(sak.toByte(), true)
+            m1Data.atqa = "0x" + ByteUtils.byteArrayToHexString(atqa)
+            m1Data.type = when (mifareClassic.type) { // 类型
+                MifareClassic.TYPE_CLASSIC -> "TYPE_CLASSIC"
+                MifareClassic.TYPE_PLUS -> "TYPE_PLUS"
+                MifareClassic.TYPE_PRO -> "TYPE_PRO"
+                // 这个不可能执行，MifareClassic的构造中，
+                // 如果没找到上述三个类型，自动抛出运行时异常
+                else -> "TYPE_UNKNOWN"
+            }
+            m1Data.size = mifareClassic.size
+            m1Data.sectorCount = mifareClassic.sectorCount
+            m1Data.blockCount = mifareClassic.blockCount
+            m1Data.sectors = readBlock(mifareClassic)
         }
         return if (isSuccess) {
-            data
+            m1Data
         } else {
             null
         }
@@ -196,8 +202,8 @@ object M1Utils {
 //        return result.isSuccess
 //    }
 
-    private fun readBlock(mifareClassic: MifareClassic): List<MifareClassicSector> {
-        val sectorList = arrayListOf<MifareClassicSector>()
+    private fun readBlock(mifareClassic: MifareClassic): List<M1Sector> {
+        val sectorList = arrayListOf<M1Sector>()
         for (i in 0 until mifareClassic.sectorCount) {
 
             val bCount = mifareClassic.getBlockCountInSector(i) // //获得当前扇区的所包含块的数量
@@ -211,7 +217,7 @@ object M1Utils {
                 mifareClassic.authenticateSectorWithKeyB(i, it)
             }
             if (keyA == null && keyB == null) {
-                sectorList.add(MifareClassicSector(i, bIndex, bCount, "", "", emptyList()))
+                sectorList.add(M1Sector(i, bIndex, bCount, "", "", emptyList()))
                 println("$i 扇区, 无法读取")
                 continue
             }
@@ -226,7 +232,7 @@ object M1Utils {
             }
 
             // 读取块信息
-            val blockList = arrayListOf<MifareClassicBlock>()
+            val blockList = arrayListOf<Block>()
             for (j in 0 until bCount - 1) {
                 val canRead = if (keyB != null) M1AccessControlUtils.canReadDataBlockByKeyB(
                     j,
@@ -237,21 +243,23 @@ object M1Utils {
                 else M1AccessControlUtils.canReadDataBlockByKeyA(j, block3[6], block3[7], block3[8])
                 if (canRead) {
                     val block = mifareClassic.readBlock(bIndex + j)
-                    blockList.add(MifareClassicBlock(bIndex + i, block))
+                    blockList.add(Block(bIndex + i, block))
                     println("$i 扇区, $j 块区, ${ByteUtils.byteArrayToHexString(block, separator = " ")}")
                 } else {
-                    blockList.add(MifareClassicBlock(bIndex + i, ByteArray(0)))
+                    blockList.add(Block(bIndex + i, ByteArray(0)))
                     println("$i 扇区, $j 块区, 无法读取")
                 }
             }
             val decBlock = (keyA ?: defaultKeyA) + byteArrayOf(block3[6], block3[7], block3[8], block3[9]) + (keyB ?: defaultKeyB)
-            blockList.add(MifareClassicBlock(bIndex + 3, decBlock))
+            blockList.add(Block(bIndex + 3, decBlock))
             println("$i 扇区, 4 块区, ${ByteUtils.byteArrayToHexString(decBlock, separator = " ")}")
 
             // 保存信息
-            sectorList.add(MifareClassicSector(i, bIndex, bCount,
+            sectorList.add(
+                M1Sector(i, bIndex, bCount,
                 ByteUtils.byteArrayToHexString(keyA ?: ByteArray(0), separator = " "),
-                ByteUtils.byteArrayToHexString(keyB ?: ByteArray(0), separator = " "), blockList))
+                ByteUtils.byteArrayToHexString(keyB ?: ByteArray(0), separator = " "), blockList)
+            )
         }
         return sectorList
     }

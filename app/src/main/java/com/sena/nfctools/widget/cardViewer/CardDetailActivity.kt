@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.sena.nfctools.databinding.ActivityCardDetailBinding
 import com.sena.nfctools.newBean.BaseCard
-import com.sena.nfctools.utils.TestFile
+import com.sena.nfctools.utils.CardFileUtils
 import com.sena.nfctools.widget.CardDetailAdapter
 
 class CardDetailActivity : AppCompatActivity() {
@@ -25,7 +25,7 @@ class CardDetailActivity : AppCompatActivity() {
             finish()
             return
         }
-        val c = TestFile.getCardById(this,  id)
+        val c = CardFileUtils.getCardById(this,  id)
         if (c == null) {
             println("cannot find card $id in externCacheDir.cards")
             return
@@ -40,7 +40,7 @@ class CardDetailActivity : AppCompatActivity() {
         val adapter = CardDetailAdapter()
         binding.recyclerView.adapter = adapter
 
-        val map = card.buildMap()
+        val map = card.buildCardDetail()
         map.toList()
         adapter.setList(map.toList())
 

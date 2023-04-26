@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.sena.nfctools.databinding.ActivityMemoryDetailBinding
 import com.sena.nfctools.newBean.NfcVCard
 import com.sena.nfctools.utils.ByteUtils
-import com.sena.nfctools.utils.TestFile
+import com.sena.nfctools.utils.CardFileUtils
 import com.sena.nfctools.widget.CardDetailAdapter
 
 class MemoryDetailActivity : AppCompatActivity() {
@@ -34,17 +34,17 @@ class MemoryDetailActivity : AppCompatActivity() {
     }
 
     private fun initData(id: String) {
-        val card = TestFile.getCardById(this, id) ?: return
+        val card = CardFileUtils.getCardById(this, id) ?: return
 
-        if (card is NfcVCard) {
-            val data = card.icodeSlixData ?: return
-            data.blocks.forEach {
-                list.add(Pair(
-                    "Block ${it.index}",
-                    ByteUtils.byteArrayToHexString(it.data, separator = "")
-                ))
-            }
-        }
+//        if (card is NfcVCard) {
+//            val data = card.icodeSlixData ?: return
+//            data.blocks.forEach {
+//                list.add(Pair(
+//                    "Block ${it.index}",
+//                    ByteUtils.byteArrayToHexString(it.data, separator = "")
+//                ))
+//            }
+//        }
     }
 
     private fun initView() {

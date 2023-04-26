@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.sena.nfctools.newBean.BaseCard
-import com.sena.nfctools.utils.TestFile
+import com.sena.nfctools.utils.CardFileUtils
 import java.lang.Exception
 
 
@@ -28,7 +28,7 @@ class CardViewModel : ViewModel() {
         try {
             // TODO: 禁止主线程调用
 //            val list = TestFile.getAllCards(context)
-            val list = TestFile.getAllFiles(context)
+            val list = CardFileUtils.getAllFiles(context)
             cardList.addAll(list)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -44,8 +44,8 @@ class CardViewModel : ViewModel() {
                 iterator.remove()
             }
         }
-        cardList.add(Pair(card.getId(), card.name))
-        TestFile.addNewCard(context, card)
+        cardList.add(Pair(card.getId(), card.getCardType()))
+        CardFileUtils.addNewCard(context, card)
         isChange.postValue(true)
     }
 
@@ -55,7 +55,7 @@ class CardViewModel : ViewModel() {
             val item = iterator.next()
             if (id == item.first) {
                 iterator.remove()
-                TestFile.deleteCard(context, id)
+                CardFileUtils.deleteCard(context, id)
 //                TestFile.
             }
         }

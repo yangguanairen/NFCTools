@@ -3,7 +3,7 @@ package com.sena.nfctools.other
 import android.nfc.Tag
 import android.nfc.tech.MifareClassic
 import com.sena.nfctools.utils.ByteUtils
-import com.sena.nfctools.utils.nfcv.T15693
+import com.sena.nfctools.utils.nfcv.RF15693
 
 
 /**
@@ -54,7 +54,7 @@ object Test {
 
     fun readNfcV(tag: Tag) {
 
-        val iCodeSliX = T15693.get(tag)
+        val iCodeSliX = RF15693.get(tag)
         try {
             iCodeSliX.connect()
             val data = iCodeSliX.getSystemInfo()

@@ -1,14 +1,13 @@
-package com.sena.nfctools.utils.m0
+package com.sena.nfctools.utils.nfca
 
 import android.nfc.Tag
 import android.nfc.tech.MifareUltralight
-import android.nfc.tech.Ndef
 import android.nfc.tech.NfcA
-import com.sena.nfctools.newBean.Ntag21xData
-import com.sena.nfctools.newBean.Ntag21xPage
+import android.nfc.tech.TagTechnology
+import com.sena.nfctools.newBean.Block
+import com.sena.nfctools.newBean.M0Data
 import com.sena.nfctools.utils.ByteUtils
 import java.nio.ByteBuffer
-import kotlin.experimental.xor
 
 
 /**
@@ -17,12 +16,17 @@ import kotlin.experimental.xor
  * Date: 2023/4/14 14:30
  */
 
-object Ntag21xUtils {
+object M0Tools {
 
-    fun read(tag: Tag): Ntag21xData? {
+    fun read(tag: Tag): M0Data? {
         val m0 = MifareUltralight.get(tag) ?: return null
         try {
             m0.connect()
+
+            val extras = tag.getTechExtras(TagTechnology.NFC_A)
+            val sak = extras.getShort(NfcA.EXTRA_SAK)
+            val atqa = extras.getByteArray(NfcA.EXTRA_ATQA)
+
 
             val t = m0.readPages(0)
             val cc = t.slice(12..15)
@@ -31,30 +35,44 @@ object Ntag21xUtils {
                 MifareUltralight.TYPE_ULTRALIGHT -> "TYPE_ULTRALIGHT"
                 else -> "TYPE_UNKNOWN"
             }
+
+            val m0Data = M0Data()
+            m0Data.type = type
+            m0Data.sak = ByteUtils.byteToHexString(sak.toByte(), true)
+            m0Data.atqa = "0x" + ByteUtils.byteArrayToHexString(atqa)
+
             when (cc[2].toInt()) {
                 0x12 -> {
-                    return Ntag21xData(
-                        "NTAG213", type, 144, 45 * 4,
-                        144 / 4, 45, readPages(m0, 0, 44)
-                    )
+                    m0Data.manufacturer = "NXP NTAG213"
+                    m0Data.dataSize = 144
+                    m0Data.maxSize = 45 * 4
+                    m0Data.dataPage = 144 / 4
+                    m0Data.maxPage = 45
+                    m0Data.pages = readPages(m0, 0, 44)
                 }
                 0x3E -> {
-                    return Ntag21xData(
-                        "NTAG215", type, 496, 135 * 4,
-                        496 / 4, 135, readPages(m0, 0, 134)
-                    )
+                    m0Data.manufacturer = "NXP NTAG215"
+                    m0Data.dataSize = 496
+                    m0Data.maxSize = 135 * 4
+                    m0Data.dataPage = 496 / 4
+                    m0Data.maxPage = 135
+                    m0Data.pages = readPages(m0, 0, 134)
                 }
                 0x6D -> {
-                    return Ntag21xData(
-                        "NTAG216", type, 872, 231 * 4,
-                        872 / 4, 231, readPages(m0, 0, 230)
-                    )
+                    m0Data.manufacturer = "NXP NTAG216"
+                    m0Data.dataSize = 872
+                    m0Data.maxSize = 231 * 4
+                    m0Data.dataPage = 872 / 4
+                    m0Data.maxPage = 231
+                    m0Data.pages = readPages(m0, 0, 230)
                 }
                 else -> {
                     println("非NTAG21x系列卡片")
                     return null
                 }
             }
+
+            return null
         } catch (e: Exception) {
             e.printStackTrace()
             return null
@@ -64,8 +82,8 @@ object Ntag21xUtils {
     }
 
     // 闭包[start, end]
-    private fun readPages(m0: MifareUltralight, start: Int, end: Int): List<Ntag21xPage> {
-        val result = arrayListOf<Ntag21xPage>()
+    private fun readPages(m0: MifareUltralight, start: Int, end: Int): List<Block> {
+        val result = arrayListOf<Block>()
         val t = (end - start) % 4
         val finalEnd = if (t == 3) end else end + 3 - t
 
@@ -77,7 +95,7 @@ object Ntag21xUtils {
                 if (i + j <= end) {
                     buffer.get(data)
                     println("readPage: ${i + j}, data: ${ByteUtils.byteArrayToHexString(data, separator = " ")}")
-                    result.add(Ntag21xPage(i + j, data))
+                    result.add(Block(i + j, data))
                 }
             }
             buffer.clear()

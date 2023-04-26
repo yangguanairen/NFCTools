@@ -13,31 +13,33 @@ import java.io.File
  * Date: 2023/4/14 16:11
  */
 
-object TestFile {
+// 标准的file
+// id-cardType-customName
+
+object CardFileUtils {
 
 
     fun addNewCard(context: Context, card: BaseCard) {
-        val name = card.name
         val id = card.getId()
 
         val cardsDir = File(context.externalCacheDir, "cards")
         if (!cardsDir.exists()) cardsDir.mkdirs()
 
 
-        val files = cardsDir.listFiles()?.filter {
+        cardsDir.listFiles()?.filter {
             it.isFile && !it.name.startsWith(".")
         }?.filter {
-            it.name.startsWith(name)
+            it.name.startsWith(id)
         }?.forEach {
             val t = it.delete()
             println("删除了一个文件$t")
         }
 
-        val newFile = File(cardsDir, "$id-$name")
-        if (newFile.exists()) {
-            val result = newFile.delete()
-            println("删除结果: $result")
-        }
+        val newFile = File(cardsDir, "$id-${card.getCardType()}-新卡片")
+//        if (newFile.exists()) {
+//            val result = newFile.delete()
+//            println("删除结果: $result")
+//        }
 //        if (!newFile.exists()) newFile.mkdir()
 
         val gson = Gson().toJson(card)
@@ -85,10 +87,11 @@ object TestFile {
             it.isFile && !it.name.startsWith(".")
         }?.forEach {
             val t = it.name.split("-")
-            if (t.size == 2) {
+            if (t.size == 3) {
                 val id = t[0]
-                val name = t[1]
-                result.add(Pair(id, name))
+                val cardType = t[1]
+                val customName = t[2]
+                result.add(Pair(id, cardType))
             }
         }
         return result
@@ -103,8 +106,8 @@ object TestFile {
             return null
         } else {
             val file = result[0]
-            val name = file.name.split("-")[1]
-            val card = deserialization(file.readText(), name)
+            val type = file.name.split("-")[1]
+            val card = deserialization(file.readText(), type)
             return card
         }
     }
@@ -112,13 +115,13 @@ object TestFile {
     private fun deserialization(text: String, type: String): BaseCard? {
         try {
             val card = when (type) {
-                "M1" -> {
-                    Gson().fromJson<M1Card>(text, TypeToken.get(M1Card::class.java))
+                CARD_TYPE_M1 -> {
+                    Gson().fromJson(text, TypeToken.get(M1Card::class.java))
                 }
-                "NTAG215", "NTAG213", "NTAG216" -> {
-                    Gson().fromJson(text, TypeToken.get(Ntag21xCard::class.java))
+                CARD_TYPE_M0 -> {
+                    Gson().fromJson(text, TypeToken.get(M0Card::class.java))
                 }
-                "ICodeSLIX" -> {
+                CARD_TYPE_NFCV -> {
                     Gson().fromJson(text, TypeToken.get(NfcVCard::class.java))
                 }
                 else -> {

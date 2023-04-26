@@ -20,7 +20,7 @@ import com.sena.nfctools.utils.ByteUtils
 // Stack Overflow, 无法读取的问题
 // https://stackoverflow.com/questions/28405558/android-nfc-read-iso15693-rfid-tag
 
-class T15693 {
+class RF15693 {
 
     private val mid: ByteArray
     private var mNfcV: NfcV
@@ -37,9 +37,9 @@ class T15693 {
     companion object {
 
         @JvmStatic
-        fun get(tag: Tag): T15693 {
+        fun get(tag: Tag): RF15693 {
             val nfcV = NfcV.get(tag)
-            return T15693(tag.id, nfcV)
+            return RF15693(tag.id, nfcV)
         }
     }
 

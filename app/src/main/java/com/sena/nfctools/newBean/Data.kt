@@ -7,7 +7,8 @@ package com.sena.nfctools.newBean
  * Date: 2023/4/14 15:28
  */
 
-
+private const val UNKNOWN_TEXT = "unknown_text"
+private const val UNKNOWN_INT = -1
 
 data class TagData(
     val id: String,
@@ -15,13 +16,9 @@ data class TagData(
 )
 
 data class NfcAData(
-    val atqa: String,
-    val sak: String
-)
-
-data class NfcVData(
-    val responseFlags: Byte,
-    val dsfid: Byte
+    var manufacturer: String = UNKNOWN_TEXT,
+    var atqa: String = UNKNOWN_TEXT,
+    var sak: String = UNKNOWN_TEXT
 )
 
 data class NdefData(
@@ -38,50 +35,51 @@ data class RecordData(
     val payload: ByteArray
 )
 
-data class MifareClassicData(
-    val type: String,
-    val size: Int,
-    val sectorCount: Int,
-    val blockCount: Int,
-    val sectors: List<MifareClassicSector>
+data class Block(
+    val index: Int,
+    val data: ByteArray
 )
 
-data class MifareClassicSector(
+data class M1Data(
+    var type: String = UNKNOWN_TEXT,
+    var atqa: String = UNKNOWN_TEXT,
+    var sak: String = UNKNOWN_TEXT,
+    var manufacturer: String = UNKNOWN_TEXT,
+    var size: Int = UNKNOWN_INT, // 实际可使用的大小
+    var sectorCount: Int = UNKNOWN_INT,
+    var blockCount: Int = UNKNOWN_INT,
+    var sectors: List<M1Sector> = emptyList()
+)
+
+data class M1Sector(
     val index: Int,
     val bStartIndex: Int,
     val bCount: Int,
     val keyA: String,
     val keyB: String,
-    val blocks: List<MifareClassicBlock>
+    val blocks: List<Block>
 )
 
-data class MifareClassicBlock(
-    val index: Int,
-    val data: ByteArray
+
+data class M0Data(
+    var manufacturer: String = UNKNOWN_TEXT,
+    var type: String = UNKNOWN_TEXT,
+    var atqa: String = UNKNOWN_TEXT,
+    var sak: String = UNKNOWN_TEXT,
+    var dataSize: Int = UNKNOWN_INT, // 可以读写的大小
+    var maxSize: Int = UNKNOWN_INT,  // 卡片总大小
+    var dataPage: Int = UNKNOWN_INT,
+    var maxPage: Int = UNKNOWN_INT,
+    var pages: List<Block> = emptyList()
 )
 
-data class Ntag21xData(
-    val cardName: String,
-    val type: String,
-    val dataSize: Int, // 可以读写的大小
-    val maxSize: Int,  // 卡片总大小
-    val dataPage: Int,
-    val maxPage: Int,
-    val pages: List<Ntag21xPage>
+data class NfcVData(
+    var manufacturer: String = UNKNOWN_TEXT,
+    var blockCount: Int = UNKNOWN_INT,
+    var blockSize: Int = UNKNOWN_INT,
+    var responseFlags: Byte = -1,
+    var dsfid: Byte = -1,
+    var blocks: List<Block> = emptyList()
 )
 
-data class Ntag21xPage(
-    val index: Int,
-    val data: ByteArray
-)
 
-data class T15693Data(
-    val blockCount: Int,
-    val blockSize: Int,
-    val blocks: List<T15693Block>
-)
-
-data class T15693Block(
-    val index: Int,
-    val data: ByteArray
-)
